@@ -9,7 +9,7 @@ import type { FoundPlace, HistoryItem, Lead, LeadStatus } from "./types";
 const now = () => new Date().toISOString();
 
 export async function listLeads(): Promise<Lead[]> {
-  const all = await db.all<Lead>("leads");
+  const all = (await db.all<Lead>("leads")).map((l) => (l.district && /^\d/.test(l.district) ? { ...l, district: undefined } : l));
   return all.sort((a, b) => b.score - a.score || b.updatedAt.localeCompare(a.updatedAt));
 }
 

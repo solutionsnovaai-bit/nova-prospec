@@ -60,7 +60,8 @@ export function splitAddress(addr?: string): { district?: string; city?: string 
   }
   if (!district && parts.length >= 3) {
     const cand = parts[parts.length - 3];
-    if (cand && !/\d{5}-?\d{3}/.test(cand)) district = cand.replace(/^.*-\s*/, "");
+    const d = cand?.replace(/^.*-\s*/, "").trim();
+    if (d && !/\d/.test(d)) district = d; // número da rua não é bairro
   }
   return { district, city };
 }
