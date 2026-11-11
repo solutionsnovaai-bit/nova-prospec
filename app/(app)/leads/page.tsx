@@ -9,7 +9,7 @@ import { api, fmt, relTime, useLeads } from "@/lib/client";
 import { PAIN_LABEL, PAIN_ORDER } from "@/lib/score";
 import { STATUS_LABEL, STATUS_ORDER, type Lead, type LeadStatus, type PainKey } from "@/lib/types";
 
-const KANBAN: LeadStatus[] = ["novo", "qualificado", "demo", "abordado", "respondeu", "negociando", "fechado"];
+const KANBAN: LeadStatus[] = ["novo", "qualificado", "demo", "abordado", "respondeu", "negociando", "reuniao", "fechado"];
 
 function LeadsInner() {
   const sp = useSearchParams();

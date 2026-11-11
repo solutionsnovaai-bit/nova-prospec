@@ -64,3 +64,19 @@ export const GROUP_PROJECT: Record<NicheGroup, { tipo: string; titulo: string }>
   saude: { tipo: "Landing page", titulo: "Página com procedimentos, antes e depois e agendamento" },
   auto: { tipo: "Landing page", titulo: "Página com serviços, estoque e orçamento no WhatsApp" },
 };
+
+/** Janela sugerida para a primeira mensagem: fora do pico de atendimento de cada tipo de negócio. */
+const HOURS: Record<NicheGroup, { label: string; windows: [number, number][] }> = {
+  comida: { label: "14h às 17h, entre o almoço e o jantar", windows: [[14, 17]] },
+  varejo: { label: "10h às 12h ou 15h às 17h", windows: [[10, 12], [15, 17]] },
+  servico: { label: "9h às 11h ou 14h às 16h", windows: [[9, 11], [14, 16]] },
+  saude: { label: "11h às 13h ou 17h às 19h", windows: [[11, 13], [17, 19]] },
+  auto: { label: "8h às 10h ou 16h às 18h", windows: [[8, 10], [16, 18]] },
+};
+
+export function contactWindow(text: string, hint?: string, at = new Date()) {
+  const g = guessNiche(text, hint)?.group ?? "servico";
+  const h = at.getHours() + at.getMinutes() / 60;
+  const now = at.getDay() !== 0 && HOURS[g].windows.some(([a, b]) => h >= a && h < b);
+  return { label: HOURS[g].label, now };
+}

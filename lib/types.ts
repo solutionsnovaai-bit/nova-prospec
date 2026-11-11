@@ -9,6 +9,7 @@ export type LeadStatus =
   | "abordado"
   | "respondeu"
   | "negociando"
+  | "reuniao"
   | "fechado"
   | "perdido"
   | "descartado";
@@ -20,6 +21,7 @@ export const STATUS_ORDER: LeadStatus[] = [
   "abordado",
   "respondeu",
   "negociando",
+  "reuniao",
   "fechado",
   "perdido",
   "descartado",
@@ -32,6 +34,7 @@ export const STATUS_LABEL: Record<LeadStatus, string> = {
   abordado: "Abordado",
   respondeu: "Respondeu",
   negociando: "Negociando",
+  reuniao: "Reunião marcada",
   fechado: "Fechado",
   perdido: "Perdido",
   descartado: "Descartado",
@@ -104,6 +107,7 @@ export interface AiAnalysis {
   ofertas: string[];
   abordagem: string;
   mensagem: string;
+  objecoes?: string[];
   prioridade: "alta" | "media" | "baixa";
 }
 
@@ -193,6 +197,7 @@ export interface PublicSettings {
   offers: Offer[];
   storage: { kind: "postgres" | "supabase" | "arquivo"; persistent: boolean };
   defaultCity: string;
+  ownerName: string;
 }
 
 export type KeyName = "serpapi" | "serper" | "groq" | "openrouter" | "moonshot" | "custom";

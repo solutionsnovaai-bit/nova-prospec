@@ -71,6 +71,7 @@ Devolva este JSON:
   "ofertas": ["serviços da agência a oferecer depois, em ordem"],
   "abordagem": "1 frase sobre o ângulo da primeira mensagem",
   "mensagem": "primeira mensagem de WhatsApp, até 3 linhas, humana, sem emoji em excesso, termina com uma pergunta; use {demo} onde vai o link da prévia e {empresa} para o nome",
+  "objecoes": ["2 ou 3 objeções prováveis desse dono, cada uma como 'objeção → resposta curta que leva para uma conversa de 15 minutos'"],
   "prioridade": "alta | media | baixa"
 }`;
 }
@@ -124,6 +125,7 @@ export async function analyzeLead(l: Lead, opts: { web?: boolean } = {}): Promis
     ofertas: (j.ofertas ?? []).map(String).slice(0, 6),
     abordagem: String(j.abordagem ?? ""),
     mensagem: String(j.mensagem ?? ""),
+    objecoes: (j.objecoes ?? []).map(String).slice(0, 4),
     prioridade: (["alta", "media", "baixa"].includes(String(j.prioridade)) ? j.prioridade : "media") as AiAnalysis["prioridade"],
   };
   const withAi = addHistory({ ...l, ai, status: l.status === "novo" ? "qualificado" : l.status }, "ia", `Análise da IA: ${ai.projeto.tipo}`);

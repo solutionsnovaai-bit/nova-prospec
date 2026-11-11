@@ -29,7 +29,7 @@ export function Shell({ children }: { children: ReactNode }) {
     <div className="app">
       <nav className="rail" aria-label="Navegação">
         <Link href="/" className="mark" aria-label="Nova Prospec">
-          <Mark size={30} />
+          <Mark size={46} />
         </Link>
         {NAV.map((n) => (
           <Link key={n.href} href={n.href} aria-current={active(path, n.href) ? "page" : undefined} aria-label={n.label}>
@@ -50,7 +50,7 @@ export function Shell({ children }: { children: ReactNode }) {
 
       <header className="topbar">
         <Link href="/" className="brand">
-          <Mark size={24} /> Nova Prospec
+          <Mark size={30} /> Nova Prospec
         </Link>
         <Link href="/ajustes" className="btn ghost icon" aria-label="Ajustes">
           <Settings size={18} strokeWidth={1.5} />

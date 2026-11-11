@@ -36,6 +36,7 @@ const STATUS_TONE: Partial<Record<LeadStatus, string>> = {
   demo: "accent",
   respondeu: "pos",
   negociando: "pos",
+  reuniao: "accent",
   fechado: "pos",
   perdido: "neg",
 };
@@ -128,4 +129,22 @@ export function WhatsAppButton({
       {label}
     </a>
   );
+}
+
+/** Número que sobe até o valor (uma vez, ao aparecer). */
+export function Count({ n }: { n: number }) {
+  const [v, setV] = useState(n);
+  useEffect(() => {
+    if (typeof window === "undefined" || window.matchMedia("(prefers-reduced-motion: reduce)").matches || n === 0) return setV(n);
+    let raf = 0;
+    const t0 = performance.now();
+    const tick = (t: number) => {
+      const k = Math.min(1, (t - t0) / 700);
+      setV(Math.round(n * (1 - Math.pow(1 - k, 3))));
+      if (k < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [n]);
+  return <>{new Intl.NumberFormat("pt-BR").format(v)}</>;
 }

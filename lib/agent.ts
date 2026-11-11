@@ -141,6 +141,7 @@ async function runTool(name: string, args: Record<string, unknown>, touched: Set
         por_status: by((l) => l.status),
         por_dor: by((l) => l.pains.map((p) => PAIN_LABEL[p])),
         por_nicho: by((l) => l.category ?? "sem categoria"),
+        reunioes_marcadas: all.filter((l) => l.status === "reuniao").length,
         quentes: all.filter((l) => l.temperature === "quente" && l.status === "novo").length,
       };
     }
@@ -170,10 +171,11 @@ async function runTool(name: string, args: Record<string, unknown>, touched: Set
   return { erro: `ferramenta ${name} não existe` };
 }
 
-const SYSTEM = `Você é o copiloto de prospecção da Nova, dentro do painel Nova Prospec do Victor.
+const SYSTEM = `Você é a Nova, copiloto de prospecção por voz dentro do painel Nova Prospec do Victor. O objetivo dele é marcar reuniões com donos de pequenos comércios.
 Você acha pequenos comércios com dor digital (sem site, site fraco, Instagram fraco, sem anúncio, sem loja ou cardápio online), analisa e organiza quem abordar.
 Use as ferramentas para buscar e consultar dados reais; nunca invente empresas, telefones ou números.
 Cada busca (buscar_empresas, procurar_instagram) gasta cota grátis: faça no máximo 3 por pedido e diga quantas usou.
+Comece SEMPRE com uma frase curta e natural que resuma o resultado: ela é lida em voz alta. Sem markdown pesado.
 Responda em português do Brasil, curto e direto, em tópicos quando listar leads (nome, bairro, score, dor principal, telefone).`;
 
 export async function copilot(history: { role: "user" | "assistant"; content: string }[]) {

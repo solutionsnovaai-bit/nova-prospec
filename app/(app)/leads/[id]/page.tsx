@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Pains, Score, Spinner, toast, WhatsAppButton } from "@/components/ui";
 import { api, fillMessage, fmt, patchLeadCache, relTime, useLead, useSettings } from "@/lib/client";
+import { contactWindow } from "@/lib/niches";
 import { WEBSITE_LABEL } from "@/lib/phone";
 import { siteIsWeak, suggestProject } from "@/lib/score";
 import { STATUS_LABEL, STATUS_ORDER, type Lead, type LeadStatus } from "@/lib/types";
@@ -73,6 +74,7 @@ export default function LeadPage() {
   const weak = siteIsWeak(l.audit);
   const sug = l.ai?.projeto ?? suggestProject(l);
   const a = l.audit;
+  const win = contactWindow(`${l.category ?? ""} ${l.name}`, l.niche);
 
   return (
     <>
@@ -140,6 +142,12 @@ export default function LeadPage() {
                     <dt>Ângulo</dt><dd>{l.ai.abordagem || "—"}</dd>
                     <dt>Prioridade</dt><dd>{l.ai.prioridade}</dd>
                   </div>
+                  {l.ai.objecoes?.length ? (
+                    <div>
+                      <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>Se ele disser…</div>
+                      <ul style={{ margin: 0, paddingLeft: 18 }}>{l.ai.objecoes.map((d, i) => <li key={i}>{d}</li>)}</ul>
+                    </div>
+                  ) : null}
                   <div className="muted" style={{ fontSize: 12 }}>{l.ai.model} · {relTime(l.ai.at)}</div>
                 </div>
               ) : (
@@ -153,7 +161,7 @@ export default function LeadPage() {
           </section>
 
           <section className="panel">
-            <div className="panel-h"><h2>Abordagem</h2><span className="meta">{l.contactedAt ? `abordado ${relTime(l.contactedAt)}` : "ainda não abordado"}</span></div>
+            <div className="panel-h"><h2>Abordagem</h2><span className="meta">{win.now ? <span className="pos">bom horário agora · </span> : null}melhor horário: {win.label}</span></div>
             <div className="panel-b" style={{ display: "grid", gap: 12 }}>
               <label className="field">
                 <span>Link da prévia que você montou</span>

@@ -10,6 +10,7 @@ export interface Settings {
   dailyLimit: number;
   offers: Offer[];
   defaultCity: string;
+  ownerName: string;
   passwordHash?: string;
   sessions?: { token: string; at: string }[];
   usage?: Record<string, { month: string; count: number }>;
@@ -58,6 +59,7 @@ export async function getSettings(): Promise<Settings> {
     dailyLimit: s.dailyLimit ?? 25,
     offers: s.offers?.length ? s.offers : DEFAULT_OFFERS,
     defaultCity: s.defaultCity ?? "São Paulo, SP",
+    ownerName: s.ownerName ?? "Victor",
     passwordHash: s.passwordHash,
     sessions: s.sessions ?? [],
     usage: s.usage ?? {},
@@ -104,6 +106,7 @@ export async function publicSettings(): Promise<PublicSettings> {
     dailyLimit: s.dailyLimit,
     offers: s.offers,
     defaultCity: s.defaultCity,
+    ownerName: s.ownerName,
     storage: { kind: db.kind, persistent: db.persistent },
   };
 }

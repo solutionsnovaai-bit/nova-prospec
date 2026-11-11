@@ -31,6 +31,7 @@ export async function PATCH(req: Request) {
       dailyLimit?: number;
       offers?: Offer[];
       defaultCity?: string;
+      ownerName?: string;
     }>(req);
     const patch: Partial<Settings> = {};
     if (b.keys) {
@@ -54,6 +55,7 @@ export async function PATCH(req: Request) {
     if (typeof b.dailyLimit === "number") patch.dailyLimit = Math.max(1, Math.min(200, Math.round(b.dailyLimit)));
     if (Array.isArray(b.offers)) patch.offers = b.offers.filter((o) => o?.nome).slice(0, 20);
     if (typeof b.defaultCity === "string") patch.defaultCity = b.defaultCity.slice(0, 80);
+    if (typeof b.ownerName === "string" && b.ownerName.trim()) patch.ownerName = b.ownerName.trim().slice(0, 40);
     await saveSettings(patch);
     return ok({ settings: await publicSettings() });
   } catch (e) {

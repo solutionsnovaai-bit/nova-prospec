@@ -17,7 +17,7 @@ export default function AjustesPage() {
   const { usage, reload: reloadUsage } = useUsage();
   const { leads, reload: reloadLeads } = useLeads();
   const [keys, setKeys] = useState<Partial<Record<KeyName, string>>>({});
-  const [f, setF] = useState<Pick<PublicSettings, "messageBase" | "signature" | "dailyLimit" | "defaultCity"> | null>(null);
+  const [f, setF] = useState<Pick<PublicSettings, "messageBase" | "signature" | "dailyLimit" | "defaultCity" | "ownerName"> | null>(null);
   const [ai, setAi] = useState<PublicSettings["ai"] | null>(null);
   const [models, setModels] = useState<string[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
@@ -25,7 +25,7 @@ export default function AjustesPage() {
 
   useEffect(() => {
     if (!settings) return;
-    setF({ messageBase: settings.messageBase, signature: settings.signature, dailyLimit: settings.dailyLimit, defaultCity: settings.defaultCity });
+    setF({ messageBase: settings.messageBase, signature: settings.signature, dailyLimit: settings.dailyLimit, defaultCity: settings.defaultCity, ownerName: settings.ownerName });
     setAi(settings.ai);
   }, [settings]);
 
@@ -166,6 +166,7 @@ export default function AjustesPage() {
                 <label className="field"><span>Limite de abordagens por dia</span><input className="input num" type="number" min={1} max={200} value={f.dailyLimit} onChange={(e) => setF({ ...f, dailyLimit: Number(e.target.value) })} /></label>
                 <label className="field"><span>Cidade padrão do Radar</span><input className="input" value={f.defaultCity} onChange={(e) => setF({ ...f, defaultCity: e.target.value })} /></label>
               </div>
+              <label className="field"><span>Como a Nova te chama</span><input className="input" value={f.ownerName} onChange={(e) => setF({ ...f, ownerName: e.target.value })} /></label>
               <div><button className="btn primary" disabled={busy === "msg"} onClick={() => save("msg", f, "Salvo")}>{busy === "msg" && <Spinner />} Salvar</button></div>
             </div>
           </section>

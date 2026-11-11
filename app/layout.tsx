@@ -8,7 +8,6 @@ export const metadata: Metadata = {
   title: "Nova Prospec",
   description: "Radar de prospecção da Nova",
   robots: { index: false, follow: false },
-  icons: { icon: "/icon.svg" },
 };
 
 export const viewport: Viewport = {
