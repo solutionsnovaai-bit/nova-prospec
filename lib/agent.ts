@@ -183,7 +183,7 @@ export async function copilot(history: { role: "user" | "assistant"; content: st
   const steps: { tool: string; args: Record<string, unknown>; ok: boolean }[] = [];
   const touched = new Set<string>();
   for (let i = 0; i < 6; i++) {
-    const r = await chat({ messages, tools: TOOLS, temperature: 0.3, maxTokens: 1200 });
+    const r = await chat({ messages, tools: TOOLS, temperature: 0.3, maxTokens: 2400 });
     if (!r.toolCalls.length) {
       return { reply: r.content || "Pronto.", steps, leadIds: [...touched], model: r.model };
     }

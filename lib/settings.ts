@@ -31,7 +31,7 @@ Posso te mostrar como ficaria no ar?`;
 const DEFAULT_AI: AiConfig = {
   provider: "groq",
   baseUrl: "https://api.groq.com/openai/v1",
-  model: "moonshotai/kimi-k2-instruct-0905",
+  model: "openai/gpt-oss-120b",
   webModel: "groq/compound-mini",
 };
 

@@ -5,7 +5,7 @@ import { api, fmt, useLeads, useSettings, useUsage } from "@/lib/client";
 import type { KeyName, PublicSettings } from "@/lib/types";
 
 const KEYS: { id: KeyName; label: string; hint: string; url: string }[] = [
-  { id: "groq", label: "Groq (IA: Kimi, Qwen, GPT-OSS)", hint: "grátis, sem cartão", url: "https://console.groq.com/keys" },
+  { id: "groq", label: "Groq (IA: GPT-OSS, Qwen)", hint: "grátis, sem cartão", url: "https://console.groq.com/keys" },
   { id: "serpapi", label: "SerpApi (Google Maps)", hint: "250 buscas grátis por mês", url: "https://serpapi.com/manage-api-key" },
   { id: "serper", label: "Serper (Google Maps e busca)", hint: "2.500 créditos grátis, uma vez", url: "https://serper.dev/api-keys" },
   { id: "openrouter", label: "OpenRouter (opcional)", hint: "modelos :free", url: "https://openrouter.ai/settings/keys" },

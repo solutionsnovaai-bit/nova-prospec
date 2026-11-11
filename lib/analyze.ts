@@ -107,7 +107,7 @@ export async function analyzeLead(l: Lead, opts: { web?: boolean } = {}): Promis
       { role: "user", content: userPrompt(l, offers, s.messageBase, extra) },
     ],
     temperature: 0.35,
-    maxTokens: 1400,
+    maxTokens: 3000,
   });
   const j = parseJsonLoose<Partial<AiAnalysis>>(r.content);
   if (!j?.projeto || !j.resumo) throw new Error("A IA não devolveu a análise no formato certo. Tenta de novo ou troca o modelo em Ajustes.");

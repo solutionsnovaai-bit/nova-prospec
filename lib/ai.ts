@@ -7,7 +7,7 @@ export const PROVIDERS: Record<AiConfig["provider"], { label: string; baseUrl: s
     label: "Groq (grátis)",
     baseUrl: "https://api.groq.com/openai/v1",
     key: "groq",
-    suggested: ["moonshotai/kimi-k2-instruct-0905", "qwen/qwen3-32b", "openai/gpt-oss-120b", "llama-3.3-70b-versatile"],
+    suggested: ["openai/gpt-oss-120b", "qwen/qwen3.8-27b", "openai/gpt-oss-20b"],
     web: "groq/compound-mini",
     signup: "https://console.groq.com/keys",
   },
@@ -88,7 +88,7 @@ export async function chat(opts: {
     model,
     messages: opts.messages,
     temperature: opts.temperature ?? 0.4,
-    max_tokens: opts.maxTokens ?? 1800,
+    max_tokens: opts.maxTokens ?? 2400,
   };
   if (opts.tools?.length) {
     body.tools = opts.tools;
@@ -96,6 +96,7 @@ export async function chat(opts: {
   }
   if (opts.json) body.response_format = { type: "json_object" };
   if (/qwen3/i.test(model) && baseUrl.includes("groq.com")) body.reasoning_format = "hidden";
+  if (/gpt-oss/i.test(model)) body.reasoning_effort = "low"; // raciocínio curto: sobra espaço para a resposta
 
   const call = async (b: Record<string, unknown>) => {
     const ctrl = new AbortController();
@@ -122,10 +123,11 @@ export async function chat(opts: {
 
   let { res, j, text } = await call(body);
   // alguns modelos não aceitam json_object ou reasoning_format: tenta de novo sem
-  if (!res.ok && res.status === 400 && (body.response_format || body.reasoning_format)) {
+  if (!res.ok && res.status === 400 && (body.response_format || body.reasoning_format || body.reasoning_effort)) {
     const b2 = { ...body };
     delete b2.response_format;
     delete b2.reasoning_format;
+    delete b2.reasoning_effort;
     ({ res, j, text } = await call(b2));
   }
   if (!res.ok) {
