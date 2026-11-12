@@ -1,16 +1,16 @@
-/** Regiões-alvo da prospecção. "prioridade" = público com mais poder de compra; "regional" = bairros próximos, só como complemento. */
+/** Regiões-alvo. "prioridade" = público com mais poder de compra (+8 no score); "vizinhas" = neutras; "distante" = só complemento (−8). */
 export const REGIONS = {
-  prioridade: ["Tatuapé, São Paulo", "Anália Franco, São Paulo", "Carrão, São Paulo", "Avenida Paulista, São Paulo", "Pinheiros, São Paulo"],
+  prioridade: ["Tatuapé, São Paulo", "Anália Franco, São Paulo", "Mooca, São Paulo", "Carrão, São Paulo", "Avenida Paulista, São Paulo", "Pinheiros, São Paulo"],
   cidades: ["Rio de Janeiro, RJ", "Piracicaba, SP", "Porto Alegre, RS"],
-  regional: ["Itaim Paulista, São Paulo", "São Miguel Paulista, São Paulo", "Itaquera, São Paulo"],
+  regional: ["Vila Matilde, São Paulo", "Itaquera, São Paulo", "São Miguel Paulista, São Paulo", "Itaim Paulista, São Paulo"],
 };
 
-const PRIO = /tatuap|an[aá]lia franco|carr[aã]o|paulista\b(?!,? ?s[aã]o paulo - sp$)|bela vista|jardins|pinheiros|rio de janeiro|piracicaba|porto alegre/i;
-const REG = /itaim paulista|s[aã]o miguel|itaquera|guaianases|lajeado|vila curu[cç][aá]|jardim helena/i;
+const PRIO = /tatuap|an[aá]lia franco|mo[oó]ca|carr[aã]o|av(\.|enida)? paulista|bela vista|jardins|pinheiros|rio de janeiro|piracicaba|porto alegre/i;
+const FAR = /itaim paulista|s[aã]o miguel|guaianases|lajeado|vila curu[cç][aá]|jardim helena/i;
 
 export function regionTier(text?: string): "prioridade" | "regional" | undefined {
   if (!text) return undefined;
-  if (REG.test(text)) return "regional";
+  if (FAR.test(text)) return "regional";
   if (PRIO.test(text)) return "prioridade";
   return undefined;
 }

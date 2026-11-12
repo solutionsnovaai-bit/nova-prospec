@@ -81,7 +81,7 @@ export function LoginForm({ hasPassword }: { hasPassword: boolean }) {
       </div>
       <div className="form">
         <form className="box" onSubmit={submit}>
-          <Mark size={132} />
+          <Mark size={190} />
           <h1 style={{ fontSize: 24, lineHeight: "30px", margin: "6px 0 0", fontWeight: 600 }}>{setup ? "Crie sua senha" : "Entrar"}</h1>
           <p className="dim" style={{ margin: 0 }}>
             {setup ? "Primeiro acesso: essa senha protege o painel e as suas chaves." : "Painel pessoal de prospecção."}

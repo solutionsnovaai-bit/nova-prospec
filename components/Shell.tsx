@@ -42,7 +42,7 @@ export function Shell({ children }: { children: ReactNode }) {
     <div className="app" data-nav={open ? "open" : "closed"}>
       <nav className="rail" aria-label="Navegação">
         <Link href="/" className="mark" aria-label="Nova Prospec">
-          <Mark size={open ? 132 : 54} />
+          <Mark size={open ? 196 : 78} />
           <span className="brandname">Nova Prospec</span>
         </Link>
         {NAV.map((n) => (
@@ -72,7 +72,7 @@ export function Shell({ children }: { children: ReactNode }) {
 
       <header className="topbar">
         <Link href="/" className="brand">
-          <Mark size={42} /> Nova Prospec
+          <Mark size={48} /> Nova Prospec
         </Link>
         <Link href="/ajustes" className="btn ghost icon" aria-label="Ajustes">
           <Settings size={18} strokeWidth={1.5} />
