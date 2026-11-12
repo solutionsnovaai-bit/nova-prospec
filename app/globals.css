@@ -541,3 +541,36 @@ button, a, input, select { touch-action: manipulation; }
 @keyframes routefx { 0% { opacity: 0; transform: scale(0.6) rotate(-8deg); } 35% { opacity: 0.92; transform: scale(1.05) rotate(0); } 100% { opacity: 0; transform: scale(1.45); } }
 @media (max-width: 760px) { .route-fx { left: 50%; width: 150px; height: 150px; margin: -75px 0 0 -75px; } }
 @media (prefers-reduced-motion: reduce) { .route-fx { display: none; } }
+
+/* ---------- tela de abertura ---------- */
+.splash {
+  position: fixed; inset: 0; z-index: 100; display: grid; place-items: center;
+  background: radial-gradient(720px 520px at 50% 42%, rgba(214, 178, 94, 0.15), transparent 70%), #0d0d10;
+  transition: opacity 0.5s ease, visibility 0.5s;
+}
+.splash.out { opacity: 0; visibility: hidden; }
+.splash-in { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.splash .ringbox { position: relative; width: 236px; height: 236px; display: grid; place-items: center; }
+.splash .ringbox img { width: 178px; height: 178px; filter: drop-shadow(0 0 26px rgba(214, 178, 94, 0.5)); animation: splashlogo 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both, brainpulse 1.8s ease-in-out 0.9s infinite; }
+.splash .ringbox::before {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0 58%, #3ecf8e 78%, #d6b25e 93%, transparent 100%);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+  animation: spin 1.3s linear infinite;
+}
+.splash .ringbox::after { content: ""; position: absolute; inset: 14px; border-radius: 50%; border: 1px solid rgba(214, 178, 94, 0.16); }
+.splash-name { font-size: 24px; font-weight: 600; letter-spacing: 0.02em; animation: rise 0.6s 0.35s both; }
+.splash-msgs { position: relative; width: 280px; height: 20px; text-align: center; color: var(--muted); font-size: 13px; }
+.splash-msgs span { position: absolute; inset: 0; opacity: 0; animation: splashmsg 0.85s ease both; }
+.splash-msgs span:nth-child(1) { animation-delay: 0.3s; }
+.splash-msgs span:nth-child(2) { animation-delay: 1.15s; }
+.splash-msgs span:nth-child(3) { animation: splashlast 0.5s ease 2s both; }
+.splash-bar { width: 230px; height: 2px; border-radius: 2px; background: #2a292e; overflow: hidden; }
+.splash-bar i { display: block; height: 100%; background: linear-gradient(90deg, #d6b25e, #3ecf8e); transform-origin: left; animation: splashbar 2.6s cubic-bezier(0.35, 0.1, 0.2, 1) both; }
+@keyframes splashlogo { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: none; } }
+@keyframes splashmsg { 0% { opacity: 0; transform: translateY(6px); } 20%, 80% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-6px); } }
+@keyframes splashlast { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes splashbar { from { transform: scaleX(0); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .splash-msgs span:last-child { opacity: 1; } }
+@media (max-width: 760px) { .splash .ringbox { width: 200px; height: 200px; } .splash .ringbox img { width: 150px; height: 150px; } }

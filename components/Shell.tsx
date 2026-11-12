@@ -22,6 +22,16 @@ function active(path: string, href: string) {
 export function Shell({ children }: { children: ReactNode }) {
   const path = usePathname();
   const [open, setOpen] = useState(true);
+  // tela de abertura: fica 2,8 s no primeiro carregamento, depois some com fade
+  const [splash, setSplash] = useState<"on" | "out" | "off">("on");
+  useEffect(() => {
+    const a = setTimeout(() => setSplash("out"), 2800);
+    const b = setTimeout(() => setSplash("off"), 3300);
+    return () => {
+      clearTimeout(a);
+      clearTimeout(b);
+    };
+  }, []);
   useEffect(() => {
     try {
       setOpen(localStorage.getItem("np_nav") !== "closed");
@@ -96,6 +106,23 @@ export function Shell({ children }: { children: ReactNode }) {
           </Link>
         ))}
       </nav>
+      {splash !== "off" && (
+        <div className={`splash ${splash === "out" ? "out" : ""}`} aria-hidden>
+          <div className="splash-in">
+            <div className="ringbox">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo-mark.webp" alt="" />
+            </div>
+            <div className="splash-name">Nova Prospec</div>
+            <div className="splash-msgs">
+              <span>Ligando o radar</span>
+              <span>Carregando a base de leads</span>
+              <span>Acordando a Nova</span>
+            </div>
+            <div className="splash-bar"><i /></div>
+          </div>
+        </div>
+      )}
       <Toaster />
     </div>
   );
