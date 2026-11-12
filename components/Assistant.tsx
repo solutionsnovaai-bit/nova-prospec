@@ -174,7 +174,7 @@ export function Assistant({ full }: { full?: boolean }) {
     <section className={`hero ${full ? "full" : ""}`} data-state={state}>
       {!full && <Circuits />}
       <div className="hero-orb">
-        <Orb state={state} level={voice.level} size={full ? 168 : 232} onClick={orbClick} />
+        <Orb state={state} level={voice.level} size={full ? 200 : 300} onClick={orbClick} />
         <div className="hero-hint" data-state={state}>{hint}</div>
       </div>
 

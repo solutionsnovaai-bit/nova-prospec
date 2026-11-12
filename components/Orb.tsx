@@ -47,7 +47,8 @@ export function Orb({ state, level = 0, size = 220, onClick, label }: { state: O
       const t = now / 1000;
       const { state: s, level: lv } = st.current;
       const talk = 0.5 + 0.5 * Math.sin(t * 9) * Math.sin(t * 2.3 + 1);
-      const targetAmp = s === "listening" ? 0.05 + lv * 0.24 : s === "speaking" ? 0.06 + talk * 0.16 : s === "thinking" ? 0.035 : 0.018 + 0.008 * Math.sin(t * 1.2);
+      const live = Math.max(lv, 0.4 + 0.3 * Math.sin(t * 7) * Math.sin(t * 3.1)); // mexe o tempo todo enquanto ouve
+      const targetAmp = s === "listening" ? 0.06 + live * 0.26 : s === "speaking" ? 0.06 + talk * 0.16 : s === "thinking" ? 0.035 : 0.018 + 0.008 * Math.sin(t * 1.2);
       const targetGlow = s === "idle" ? 0.5 + 0.08 * Math.sin(t * 1.2) : s === "thinking" ? 0.75 : 0.85 + (s === "listening" ? lv * 0.3 : talk * 0.2);
       amp += (targetAmp - amp) * Math.min(1, dt * 10);
       glow += (targetGlow - glow) * Math.min(1, dt * 6);
@@ -61,6 +62,18 @@ export function Orb({ state, level = 0, size = 220, onClick, label }: { state: O
       h.addColorStop(1, "rgba(214,178,94,0)");
       ctx.fillStyle = h;
       ctx.fillRect(0, 0, size, size);
+
+      // ondas de voz: saem do núcleo enquanto ouve (verde) ou fala (ouro)
+      if (s === "listening" || s === "speaking") {
+        for (let i = 0; i < 3; i++) {
+          const k = (t * 0.55 + i / 3) % 1;
+          ctx.beginPath();
+          ctx.arc(c, c, R * (1.15 + k * 1.3), 0, Math.PI * 2);
+          ctx.strokeStyle = s === "listening" ? `rgba(62,207,142,${(1 - k) * 0.55})` : `rgba(226,193,114,${(1 - k) * 0.55})`;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
+      }
 
       // anéis de radar
       ctx.lineCap = "round";
