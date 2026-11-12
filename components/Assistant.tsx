@@ -11,6 +11,7 @@ import { Spinner, toast } from "./ui";
 export type Msg = { role: "user" | "assistant"; content: string; steps?: { tool: string; ok: boolean }[]; leadIds?: string[] };
 
 const TOOL: Record<string, string> = {
+  pesquisar_web: "pesquisou na web",
   buscar_empresas: "buscou empresas",
   listar_leads: "consultou a base",
   resumo_base: "resumiu a base",

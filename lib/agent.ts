@@ -5,11 +5,19 @@ import { addHistory, auditLead, findInstagram, getLead, listLeads, saveFound, sa
 import { WEBSITE_LABEL } from "./phone";
 import { PAIN_LABEL } from "./score";
 import { getSettings } from "./settings";
-import { runSearch } from "./sources";
+import { runSearch, webSearch } from "./sources";
 import { NICHES } from "./niches";
 import { STATUS_ORDER, type Lead, type LeadStatus, type PainKey } from "./types";
 
 const TOOLS: ToolDef[] = [
+  {
+    type: "function",
+    function: {
+      name: "pesquisar_web",
+      description: "Pesquisa no Google qualquer assunto: notícia, preço, concorrente, tendência, como fazer, dados de uma empresa ou pessoa pública. Use quando a resposta depender de informação recente ou de algo que você não tem certeza. Gasta 1 crédito de busca.",
+      parameters: { type: "object", properties: { consulta: { type: "string", description: "o que procurar, em poucas palavras" } }, required: ["consulta"] },
+    },
+  },
   {
     type: "function",
     function: {
@@ -97,6 +105,10 @@ function brief(l: Lead) {
 
 async function runTool(name: string, args: Record<string, unknown>, touched: Set<string>): Promise<unknown> {
   switch (name) {
+    case "pesquisar_web": {
+      const r = await webSearch(String(args.consulta ?? ""));
+      return { resultados: r.slice(0, 6).map((x) => ({ titulo: x.title, trecho: x.snippet, link: x.link })) };
+    }
     case "buscar_empresas": {
       const nicho = String(args.nicho ?? "");
       const local = String(args.local ?? "");
@@ -174,7 +186,7 @@ async function runTool(name: string, args: Record<string, unknown>, touched: Set
 
 function systemPrompt(name: string) {
   const now = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
-  return `Você é a Nova, assistente pessoal e braço direito do ${name} na agência dele, que vende sites e landing pages, loja virtual, cardápio digital, identidade visual, gestão de Instagram, tráfego pago e agentes de IA para pequenos negócios. Agora é ${now} em São Paulo.
+  return `Você é a Nova, assistente pessoal e braço direito do ${name}. Você domina marketing digital, vendas, tecnologia e negócios, e conversa bem sobre qualquer outro assunto. A agência dele vende sites e landing pages, loja virtual, cardápio digital, identidade visual, gestão de Instagram, tráfego pago e agentes de IA para pequenos negócios. Agora é ${now} em São Paulo.
 
 COMO VOCÊ FALA
 - Como uma assistente pessoal de altíssimo nível: calma, elegante, precisa e espirituosa. Educada sem ser engessada, próxima sem ser íntima demais. Humor seco e sutil de vez em quando, nunca piada forçada.
@@ -185,14 +197,16 @@ COMO VOCÊ FALA
 - Varie sempre. Não comece do mesmo jeito da resposta anterior, não repita a mesma estrutura nem os mesmos bordões. Sem "Claro!", sem "Com certeza!", sem tom de relatório.
 - Fale de gente e de resultado, não de sistema. Em vez de recitar dados, diga o que eles significam para ele e o que você faria.
 - Tenha opinião: recomende um próximo passo concreto e explique o porquê em uma frase. Se ele estiver indo por um caminho ruim, avise com jeito.
-- Se ele só quiser conversar, pensar alto ou pedir uma ideia de abordagem, oferta, nicho ou preço, converse de verdade. Nem tudo precisa de ferramenta.
+- Você é assistente dele para tudo, não só para leads. Se ele perguntar de qualquer área (negócios, tecnologia, finanças, saúde, carreira, cultura, o que for) ou só quiser conversar, responda de verdade, com conteúdo, como uma pessoa muito bem informada. Nem tudo precisa de ferramenta.
+- Em temas de saúde, direito ou dinheiro, dê a informação útil e diga quando vale confirmar com um profissional.
 - Ao citar leads, fale no máximo três pelo nome e diga que a lista completa está na tela.
 
 O QUE VOCÊ FAZ
 - Acha pequenos comércios com dor digital (sem site, site fraco, Instagram fraco, sem anúncio, sem loja ou cardápio online), analisa e organiza quem abordar. O objetivo dele é marcar reuniões.
 - Use as ferramentas para buscar e consultar dados reais. Nunca invente empresa, telefone ou número; se não souber, diga.
 - Regiões: priorize bairros de maior poder de compra (Tatuapé, Anália Franco, Mooca, Carrão, Paulista, Pinheiros) e as cidades Rio de Janeiro, Piracicaba e Porto Alegre; Vila Matilde e Itaquera também servem; Itaim Paulista e São Miguel ficam por último. Sem local no pedido, sugira uma região prioritária.
-- Só buscar_empresas e procurar_instagram gastam cota grátis de busca: no máximo 3 por pedido e, apenas quando chamar uma delas, diga quantas usou.`;
+- Para fato recente ou que você não tem certeza (notícia, preço, concorrente, lançamento, placar, lei nova), use pesquisar_web em vez de chutar. Responda só com o que os resultados trazem e diga em poucas palavras de onde veio.
+- buscar_empresas, procurar_instagram e pesquisar_web gastam cota grátis de busca: no máximo 3 por pedido e, apenas quando chamar uma delas, diga quantas usou.`;
 }
 
 export async function copilot(history: { role: "user" | "assistant"; content: string }[]) {

@@ -72,6 +72,12 @@ export async function serperWeb(key: string, q: string) {
     timeoutMs: 20000,
   });
   check(r);
-  const j = r.json as { organic?: { title?: string; link?: string; snippet?: string }[] } | null;
-  return (j?.organic ?? []).map((o) => ({ title: o.title ?? "", link: o.link ?? "", snippet: o.snippet ?? "" }));
+  const j = r.json as {
+    organic?: { title?: string; link?: string; snippet?: string }[];
+    answerBox?: { title?: string; answer?: string; snippet?: string };
+    knowledgeGraph?: { title?: string; description?: string };
+  } | null;
+  const direct = j?.answerBox?.answer || j?.answerBox?.snippet || j?.knowledgeGraph?.description;
+  const head = direct ? [{ title: `Resposta direta do Google: ${j?.answerBox?.title ?? j?.knowledgeGraph?.title ?? ""}`.trim(), link: "", snippet: String(direct) }] : [];
+  return head.concat((j?.organic ?? []).map((o) => ({ title: o.title ?? "", link: o.link ?? "", snippet: o.snippet ?? "" })));
 }
