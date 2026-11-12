@@ -124,6 +124,7 @@ export function Assistant({ full }: { full?: boolean }) {
   const [text, setText] = useState("");
   const [speaking, setSpeaking] = useState(false);
   const [voiceOn, setVoiceOn] = useState(true);
+  const [chatOpen, setChatOpen] = useState(false);
   const end = useRef<HTMLDivElement>(null);
   const [vp, setVp] = useState({ w: 1280, h: 800 });
   useEffect(() => {
@@ -140,8 +141,8 @@ export function Assistant({ full }: { full?: boolean }) {
     return () => stopSpeaking();
   }, []);
   useEffect(() => {
-    if (full) end.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [msgs, busy, full]);
+    if (full && chatOpen) end.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [msgs, busy, full, chatOpen]);
 
   const natural = !!(settings?.keys.elevenlabs?.set || settings?.keys.lmnt?.set);
   const say = (t: string) => voiceOn && speakNatural(t, natural, { onStart: () => setSpeaking(true), onEnd: () => setSpeaking(false) });
@@ -181,7 +182,7 @@ export function Assistant({ full }: { full?: boolean }) {
     <section className={`hero ${full ? "full" : ""}`} data-state={state}>
       {!full && <Circuits />}
       <div className="hero-orb">
-        <Orb state={state} level={voice.level} size={full ? Math.round(Math.max(180, Math.min(msgs.length ? 320 : 560, vp.h * (msgs.length ? 0.36 : 0.54), vp.w - 48))) : 300} onClick={orbClick} />
+        <Orb state={state} level={voice.level} size={full ? Math.round(Math.max(180, Math.min(620, vp.h * 0.6, vp.w - 48))) : 300} onClick={orbClick} />
         <div className="hero-hint" data-state={state}>{hint}</div>
       </div>
 
@@ -189,6 +190,7 @@ export function Assistant({ full }: { full?: boolean }) {
         <div className="hero-top">
           <span className="hero-tag">Nova · copiloto de prospecção</span>
           <span style={{ display: "flex", gap: 4 }}>
+            {full && <button className="btn sm" onClick={() => setChatOpen((v) => !v)}>Conversa{msgs.length ? ` (${msgs.length})` : ""}</button>}
             {msgs.length > 0 && <button className="btn sm ghost" onClick={() => { clear(); stopSpeaking(); }}>Nova conversa</button>}
             <button className="btn sm ghost icon" onClick={toggleVoice} aria-label={voiceOn ? "Desligar voz" : "Ligar voz"} title={voiceOn ? "Voz ligada" : "Voz desligada"}>
               {voiceOn ? <Volume2 size={15} strokeWidth={1.6} /> : <VolumeX size={15} strokeWidth={1.6} />}
@@ -197,8 +199,12 @@ export function Assistant({ full }: { full?: boolean }) {
         </div>
 
         {full ? (
-          <div className="chat hero-chat">
-            {msgs.length === 0 && <p className="hero-brief">{b.greet} {b.text}</p>}
+          <aside className={`chat drawer ${chatOpen ? "open" : ""}`} aria-hidden={!chatOpen}>
+            <div className="drawer-h">
+              <b>Conversa</b>
+              <button className="btn sm ghost" onClick={() => setChatOpen(false)}>Fechar</button>
+            </div>
+            {msgs.length === 0 && <p className="dim" style={{ margin: 0 }}>{b.greet} {b.text}</p>}
             {msgs.map((m, i) => (
               <div key={i} className={`msg ${m.role === "user" ? "me" : "ai"}`}>
                 {m.content}
@@ -207,7 +213,7 @@ export function Assistant({ full }: { full?: boolean }) {
             ))}
             {busy && <div className="msg ai muted"><Spinner /> trabalhando…</div>}
             <div ref={end} />
-          </div>
+          </aside>
         ) : lastUser ? (
           <div className="hero-talk">
             <div className="hero-q">“{lastUser.content}”</div>

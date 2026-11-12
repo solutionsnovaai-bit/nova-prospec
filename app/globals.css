@@ -491,3 +491,14 @@ body::before {
 .page { position: relative; z-index: 1; }
 .rail .mark { padding: 0 0 8px; }
 @media (max-width: 760px) { .main::before { width: 320px; height: 320px; right: -50px; bottom: 30px; } }
+
+/* ---------- conversa da Nova num painel lateral ---------- */
+.drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; width: min(400px, 92vw); z-index: 40; padding: 14px 18px 24px; overflow-y: auto;
+  background: #121116; border-left: 1px solid rgba(214, 178, 94, 0.18); box-shadow: -18px 0 40px rgba(0, 0, 0, 0.45);
+  transform: translateX(105%); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); text-align: left;
+}
+.drawer.open { transform: none; }
+.drawer-h { display: flex; align-items: center; justify-content: space-between; position: sticky; top: -14px; background: #121116; padding: 6px 0 10px; margin-top: -6px; z-index: 1; }
+.drawer .msg { font-size: 13px; line-height: 20px; max-width: 100%; }
+@media (max-width: 760px) { .drawer { bottom: 56px; } }
