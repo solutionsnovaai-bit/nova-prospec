@@ -6,7 +6,8 @@ export type MatchLead = Pick<Lead, "name"> & Partial<Pick<Lead, "address" | "dis
 export const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const toks = (s: string) => norm(s).replace(/\([^)]*\)/g, " ").split(/[^a-z0-9]+/).filter(Boolean);
 
-const GENERIC = new Set(["hamburgueria", "restaurante", "pizzaria", "padaria", "lanchonete", "cafeteria", "sorveteria", "acougue", "clinica", "consultorio", "salao", "barbearia", "studio", "estudio", "espaco", "loja", "petshop", "academia", "oficina", "farmacia", "otica", "dr", "dra", "doutor", "doutora", "instituto", "atelie", "emporio"]);
+const STOP = new Set(["de", "da", "do", "das", "dos", "e", "a", "o", "na", "no", "em", "por", "para", "sua", "seu"]);
+const GENERIC = new Set(["estetica", "avancada", "beleza", "beauty", "center", "cabeleireiro", "cabeleireiros", "pet", "shop", "spa", "boutique", "bazar", "salon", "hamburgueria", "restaurante", "pizzaria", "padaria", "lanchonete", "cafeteria", "sorveteria", "acougue", "clinica", "consultorio", "salao", "barbearia", "studio", "estudio", "espaco", "loja", "petshop", "academia", "oficina", "farmacia", "otica", "dr", "dra", "doutor", "doutora", "instituto", "atelie", "emporio"]);
 const TAIL = new Set(["unidade", "loja", "matriz", "filial", "ltda", "me", "eireli", "oficial", "delivery", "sp", "rj", "rs"]);
 const STREET_PREFIX = new Set(["r", "rua", "av", "avenida", "al", "alameda", "praca", "pc", "pca", "estr", "estrada", "rod", "rodovia", "travessa", "tv", "largo", "lgo"]);
 
@@ -31,12 +32,27 @@ function locTokens(l: MatchLead) {
   return new Set(toks(`${neighborhood(l) ?? ""} ${l.city ?? ""} ${qLoc}`));
 }
 
+const distinct = (t: string[], loc: Set<string>) => t.filter((x) => x.length >= 3 && !GENERIC.has(x) && !STOP.has(x) && !TAIL.has(x) && !loc.has(x));
+
+/** Parte do nome que identifica o negócio: "Petshop - Vila Carrão - 4 Patas Club" vira "4 Patas Club". */
+export function mainName(l: MatchLead): string {
+  const loc = locTokens(l);
+  const parts = l.name
+    .replace(/\([^)]*\)/g, " ")
+    .split(/\s*[|–—•]\s*|\s+-\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return parts.find((p) => distinct(toks(p), loc).length > 0) ?? parts[0] ?? l.name;
+}
+
 /** Nome sem o bairro/cidade no fim: "Dead burger Tatuapé" vira ["dead", "burger"]. */
 export function baseTokens(l: MatchLead): string[] {
   const loc = locTokens(l);
-  const t = toks(l.name);
+  const all = toks(mainName(l));
+  const t = [...all];
   while (t.length > 1 && (loc.has(t[t.length - 1]) || TAIL.has(t[t.length - 1]))) t.pop();
-  return t;
+  // "Barbearia da Mooca": o bairro é o próprio nome, então fica
+  return distinct(t, loc).length || !distinct(all, new Set()).length ? t : all;
 }
 
 function handleOf(l: MatchLead) {
@@ -48,7 +64,7 @@ export function domainCandidates(l: MatchLead): string[] {
   const base = baseTokens(l);
   const loc = locTokens(l);
   const h = handleOf(l);
-  const slugs = [base.join(""), toks(l.name).join(""), GENERIC.has(base[0]) && base.length > 1 ? base.slice(1).join("") : "", h, base.length > 1 ? base.join("-") : ""];
+  const slugs = [base.join(""), toks(mainName(l)).join(""), GENERIC.has(base[0]) && base.length > 1 ? base.slice(1).join("") : "", h, base.length > 1 ? base.join("-") : ""];
   for (const t of loc) if (h && t.length >= 4 && h.endsWith(t)) slugs.push(h.slice(0, -t.length));
   const ok = [...new Set(slugs)].filter((s) => s.length >= 5 && s.length <= 40).slice(0, 5);
   return [...ok.map((s) => `${s}.com.br`), ...ok.slice(0, 3).map((s) => `${s}.com`)];
@@ -72,7 +88,7 @@ export function hostLooksLike(l: MatchLead, url: string): boolean {
   const core = hostCore(url);
   if (core.length < 5) return false;
   const base = baseTokens(l).join("");
-  const full = toks(l.name).join("");
+  const full = toks(mainName(l)).join("");
   const h = handleOf(l);
   const near = (name: string) => !!name && (core === name || (name.length >= 5 && core.includes(name)) || (name.includes(core) && core.length >= Math.max(5, Math.ceil(base.length * 0.7))));
   return near(base) || near(full) || near(h);
@@ -115,7 +131,13 @@ export function pageEvidence(l: MatchLead, html: string): Evidence {
     phone,
     street: !!street && text.includes(street),
     ig: !!h && raw.includes(`instagram.com/${h}`),
-    nameInTitle: base.length > 0 && base.every((t) => title.includes(t)),
+    nameInTitle: (() => {
+      const words = new Set(title.split(/[^a-z0-9]+/));
+      const key = distinct(base, new Set());
+      const need = key.length ? key : base;
+      const joined = base.join("");
+      return (need.length > 0 && need.every((t) => words.has(t))) || (joined.length >= 6 && title.replace(/[^a-z0-9]/g, "").includes(joined));
+    })(),
     hood: nb.length >= 4 && text.includes(nb),
     city: city.length >= 4 && text.includes(city),
     parked: text.length < 150 || PARKED.test(text.slice(0, 1500)),
@@ -135,5 +157,6 @@ export function accepts(e: Evidence, mode: "dominio" | "google") {
 
 export function searchQuery(l: MatchLead) {
   const where = neighborhood(l) ?? l.city ?? "";
-  return norm(l.name).includes(norm(where)) ? l.name : `${l.name} ${where}`.trim();
+  const name = mainName(l);
+  return norm(name).includes(norm(where)) ? name : `${name} ${where}`.trim();
 }

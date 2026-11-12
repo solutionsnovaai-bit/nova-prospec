@@ -92,9 +92,9 @@ export async function auditLead<T extends FoundPlace | Lead>(l: T): Promise<T> {
  * Confere se existe site próprio antes de afirmar "sem site" (o Google Maps muitas vezes só mostra o Instagram).
  * Sem `google` é grátis; com `google` faz 1 busca. Quando acha, troca o link, audita o site e refaz a pontuação.
  */
-export async function checkSite<T extends FoundPlace | Lead>(l: T, opts: { google?: boolean } = {}): Promise<T> {
+export async function checkSite<T extends FoundPlace | Lead>(l: T, opts: { google?: boolean; force?: boolean } = {}): Promise<T> {
   if (["proprio", "construtor"].includes(l.websiteKind)) return l;
-  if (l.siteCheck && (l.siteCheck.google || !opts.google)) return l;
+  if (!opts.force && l.siteCheck && (l.siteCheck.google || !opts.google)) return l;
   const r = await findSite(l, opts);
   const patch: Partial<Lead> = { siteCheck: { at: now(), found: r.found, how: r.how, google: r.google || !!l.siteCheck?.google } };
   const f = r.instagram?.followers;
