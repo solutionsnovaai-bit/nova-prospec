@@ -454,3 +454,22 @@ body::before {
   .hero-circuits { display: none; }
   .hero .hero-top::after { display: none; }
 }
+
+/* ---------- sidebar que expande e recolhe ---------- */
+.app { transition: grid-template-columns 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.app[data-nav="open"] { --rail: 228px; }
+.app[data-nav="closed"] { --rail: 76px; }
+.rail { align-items: stretch; padding: 14px 10px 14px; gap: 2px; overflow: hidden; background: linear-gradient(180deg, rgba(214, 178, 94, 0.05), transparent 240px), var(--ground); }
+.rail .mark { width: auto; height: auto; margin: 0 0 14px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 0 10px; border-bottom: 1px solid var(--border); }
+.rail .mark img { transition: width 0.28s ease, height 0.28s ease; filter: drop-shadow(0 0 18px rgba(214, 178, 94, 0.28)); }
+.rail .brandname { font-size: 15px; font-weight: 600; letter-spacing: 0.01em; color: var(--text); white-space: nowrap; }
+.rail a:not(.mark), .rail button { width: auto; height: 42px; display: flex; align-items: center; justify-content: flex-start; gap: 12px; padding: 0 16px; border-radius: 8px; font-size: 14px; white-space: nowrap; }
+.rail a:not(.mark):hover, .rail button:hover { background: rgba(255, 255, 255, 0.04); }
+.rail a[aria-current="page"]:not(.mark) { background: rgba(214, 178, 94, 0.09); }
+.rail a[aria-current="page"]::after { right: auto; left: 0; top: 10px; bottom: 10px; }
+.rail svg { flex: none; }
+.app[data-nav="closed"] .rail .lbl, .app[data-nav="closed"] .rail .brandname { display: none; }
+.app[data-nav="closed"] .rail a:not(.mark), .app[data-nav="closed"] .rail button { justify-content: center; padding: 0; }
+.app[data-nav="open"] .rail .tip { display: none; }
+.app[data-nav="closed"] .rail .tip { left: 66px; }
+.rail .sep { display: none; }

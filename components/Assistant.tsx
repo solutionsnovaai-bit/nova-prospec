@@ -3,7 +3,7 @@ import { Mic, Send, Square, Volume2, VolumeX } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, fmt, useLeads, useSettings, useUsage } from "@/lib/client";
-import { speak, stopSpeaking, useVoice } from "@/lib/voice";
+import { speakNatural, stopSpeaking, useVoice } from "@/lib/voice";
 import type { Lead } from "@/lib/types";
 import { Orb, type OrbState } from "./Orb";
 import { Spinner, toast } from "./ui";
@@ -113,7 +113,7 @@ export function MsgExtras({ m, leads }: { m: Msg; leads?: Lead[] }) {
   );
 }
 
-const IDEAS = ["Quem eu abordo hoje?", "Varre hamburguerias no Itaim Paulista", "Onde está a maior dor da base?"];
+const IDEAS = ["Quem eu abordo hoje?", "Varre clínicas de estética no Tatuapé", "Onde está a maior dor da base?"];
 
 /** A Nova: orbe + voz + conversa. `full` mostra a conversa inteira (aba IA); sem ele, só a última troca. */
 export function Assistant({ full }: { full?: boolean }) {
@@ -136,7 +136,8 @@ export function Assistant({ full }: { full?: boolean }) {
     if (full) end.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [msgs, busy, full]);
 
-  const say = (t: string) => voiceOn && speak(t, { onStart: () => setSpeaking(true), onEnd: () => setSpeaking(false) });
+  const natural = !!(settings?.keys.elevenlabs?.set || settings?.keys.lmnt?.set);
+  const say = (t: string) => voiceOn && speakNatural(t, natural, { onStart: () => setSpeaking(true), onEnd: () => setSpeaking(false) });
   const ask = async (t: string, spoken = false) => {
     setText("");
     const reply = await send(t);
@@ -247,6 +248,7 @@ export function Assistant({ full }: { full?: boolean }) {
           <span><i className={`led ${search.length ? "" : "off"}`} />Busca <b className="num">{search.length ? fmt.format(searchLeft) : "sem chave"}</b></span>
           <span><i className={`led ${aiOk ? "" : "off"}`} />IA <b className="mono">{aiOk ? (settings?.ai.model.split("/").pop() ?? "") : "sem chave"}</b></span>
           <span><i className={`led ${settings?.storage.persistent ? "" : "off"}`} />Banco <b>{settings?.storage.kind ?? "—"}</b></span>
+          <span><i className={`led ${natural ? "" : "off"}`} />Voz <b>{natural ? "natural" : "do navegador"}</b></span>
           <span><i className="led" />Base <b className="num">{fmt.format(leads?.length ?? 0)}</b></span>
         </div>
       </div>

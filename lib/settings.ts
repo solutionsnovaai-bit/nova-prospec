@@ -42,6 +42,8 @@ const ENV_KEYS: Record<KeyName, string[]> = {
   openrouter: ["OPENROUTER_API_KEY"],
   moonshot: ["MOONSHOT_API_KEY", "KIMI_API_KEY"],
   custom: ["AI_API_KEY"],
+  elevenlabs: ["ELEVENLABS_API_KEY"],
+  lmnt: ["LMNT_API_KEY"],
 };
 
 function envKey(name: KeyName): string | undefined {
@@ -90,7 +92,7 @@ function mask(v?: string) {
 
 export async function publicSettings(): Promise<PublicSettings> {
   const s = await getSettings();
-  const names: KeyName[] = ["serpapi", "serper", "groq", "openrouter", "moonshot", "custom"];
+  const names: KeyName[] = ["serpapi", "serper", "groq", "openrouter", "moonshot", "custom", "elevenlabs", "lmnt"];
   const keys = Object.fromEntries(
     names.map((n) => {
       const env = envKey(n);

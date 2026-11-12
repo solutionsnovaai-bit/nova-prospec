@@ -1,4 +1,5 @@
 import { GROUP_PROJECT, guessNiche } from "./niches";
+import { regionTier } from "./regions";
 import type { Lead, PainKey } from "./types";
 
 export const PAIN_LABEL: Record<PainKey, string> = {
@@ -47,7 +48,8 @@ type Scorable = Pick<
   | "category"
   | "name"
   | "niche"
->;
+> &
+  Partial<Pick<Lead, "address" | "district" | "city" | "query">>;
 
 export function siteIsWeak(a?: Lead["audit"]): string[] {
   if (!a) return [];
@@ -103,6 +105,9 @@ export function computeScore(l: Scorable, pains = computePains(l)) {
   else if (r >= 3) via += 4;
   if ((l.rating ?? 0) >= 4) via += 4;
   if (l.hours?.length) via += 2;
+  const tier = regionTier(`${l.district ?? ""} ${l.address ?? ""} ${l.city ?? ""}`) ?? regionTier(l.query);
+  if (tier === "prioridade") via += 8;
+  if (tier === "regional") via -= 8;
 
   const score = Math.max(0, Math.min(100, Math.round(dor + via)));
   const temperature: Lead["temperature"] = score >= 65 ? "quente" : score >= 45 ? "morno" : "frio";

@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Pains, Score, Spinner, toast, WebLabel } from "@/components/ui";
 import { api, fmt, useLeads, useSettings, useUsage } from "@/lib/client";
 import { NICHES } from "@/lib/niches";
+import { REGIONS } from "@/lib/regions";
 import type { FoundPlace, SourceId } from "@/lib/types";
 
 type Src = "auto" | "serpapi" | "serper" | "osm";
@@ -153,7 +154,7 @@ export default function RadarPage() {
             </label>
             <label className="field">
               <span>Bairro e cidade (vários: separe com ;)</span>
-              <input className="input" placeholder={settings?.defaultCity ? `ex.: Itaim Paulista, ${settings.defaultCity}` : "ex.: Itaim Paulista, São Paulo"} value={location} onChange={(e) => setLocation(e.target.value)} />
+              <input className="input" placeholder="ex.: Tatuapé, São Paulo" value={location} onChange={(e) => setLocation(e.target.value)} />
             </label>
             <button className="btn primary" disabled={busy} style={{ height: 34 }}>
               {busy ? <Spinner /> : <Search size={15} strokeWidth={1.7} />} Buscar
@@ -168,6 +169,16 @@ export default function RadarPage() {
                 </button>
               );
             })}
+          </div>
+          <div style={{ display: "grid", gap: 6 }}>
+            {([["Prioridade", REGIONS.prioridade], ["Outras cidades", REGIONS.cidades], ["Regional", REGIONS.regional]] as const).map(([label, list]) => (
+              <div key={label} className="chips" style={{ alignItems: "center" }}>
+                <span className="muted" style={{ fontSize: 12, width: 96 }}>{label}</span>
+                {list.map((r) => (
+                  <button type="button" key={r} className="chip" aria-pressed={location === r} onClick={() => setLocation(r)}>{r.split(",")[0]}</button>
+                ))}
+              </div>
+            ))}
           </div>
           <div className="tabs" role="tablist" aria-label="Fonte">
             {(["auto", "serpapi", "serper", "osm"] as Src[]).map((s) => (

@@ -33,8 +33,43 @@ export function speak(text: string, cb?: { onStart?: () => void; onEnd?: () => v
   synth.speak(u);
 }
 
+let current: HTMLAudioElement | null = null;
+
 export function stopSpeaking() {
+  if (current) {
+    current.pause();
+    current = null;
+  }
   if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
+}
+
+/** Voz natural (ElevenLabs ou LMNT pelo servidor); se não houver chave ou saldo, cai na voz do navegador. */
+export async function speakNatural(text: string, natural: boolean, cb?: { onStart?: () => void; onEnd?: () => void }) {
+  stopSpeaking();
+  if (natural) {
+    try {
+      const res = await fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: cleanForSpeech(text) }) });
+      if (res.ok) {
+        const url = URL.createObjectURL(await res.blob());
+        const a = new Audio(url);
+        current = a;
+        const done = () => {
+          URL.revokeObjectURL(url);
+          if (current === a) current = null;
+          cb?.onEnd?.();
+        };
+        a.onplay = () => cb?.onStart?.();
+        a.onended = done;
+        a.onerror = done;
+        a.onpause = () => current !== a && done();
+        await a.play();
+        return;
+      }
+    } catch {
+      /* cai na voz do navegador */
+    }
+  }
+  speak(text, cb);
 }
 
 /**

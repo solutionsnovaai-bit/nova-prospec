@@ -200,4 +200,4 @@ export interface PublicSettings {
   ownerName: string;
 }
 
-export type KeyName = "serpapi" | "serper" | "groq" | "openrouter" | "moonshot" | "custom";
+export type KeyName = "serpapi" | "serper" | "groq" | "openrouter" | "moonshot" | "custom" | "elevenlabs" | "lmnt";
