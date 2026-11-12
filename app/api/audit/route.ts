@@ -1,6 +1,6 @@
 import { guard } from "@/lib/auth";
 import { body, fail, ok } from "@/lib/http";
-import { auditLead, getLead, saveLead, addHistory } from "@/lib/leads";
+import { auditLead, getLead, saveLead, addHistory, checkSite } from "@/lib/leads";
 import type { FoundPlace } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   try {
     const b = await body<{ places?: FoundPlace[]; ids?: string[] }>(req);
     if (b.places?.length) {
-      const out = await Promise.all(b.places.slice(0, 12).map((p) => auditLead(p).catch(() => p)));
+      const out = await Promise.all(b.places.slice(0, 12).map((p) => checkSite(p).then((c) => (c.audit ? c : auditLead(c))).catch(() => p)));
       return ok({ places: out });
     }
     const leads = [];

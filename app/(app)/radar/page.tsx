@@ -32,7 +32,9 @@ export default function RadarPage() {
   const places = loc.split(";").map((s) => s.trim()).filter(Boolean);
 
   const auditBatch = async (list: FoundPlace[]) => {
-    const need = list.filter((p) => p.website && ["proprio", "construtor"].includes(p.websiteKind) && !p.audit);
+    const own = (p: FoundPlace) => ["proprio", "construtor"].includes(p.websiteKind);
+    // audita quem tem site e confere (grátis) se quem aparece "sem site" não tem mesmo
+    const need = list.filter((p) => (own(p) ? p.website && !p.audit : !p.siteCheck));
     for (let i = 0; i < need.length; i += 6) {
       const chunk = need.slice(i, i + 6);
       setAuditing((s) => new Set([...s, ...chunk.map((c) => c.id)]));

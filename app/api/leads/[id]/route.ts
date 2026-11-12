@@ -1,11 +1,12 @@
 import { guard } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { body, fail, ok } from "@/lib/http";
-import { addHistory, getLead, saveLead, setStatus } from "@/lib/leads";
+import { addHistory, getLead, saveLead, setStatus, ensureSite } from "@/lib/leads";
 import { classifyWebsite, normalizePhone } from "@/lib/phone";
 import { STATUS_ORDER, type Lead, type LeadStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -26,7 +27,11 @@ export async function PATCH(req: Request, ctx: Ctx) {
     if (!l) return fail(Object.assign(new Error("Lead não encontrado."), { status: 404 }));
     const b = await body<Partial<Lead> & { event?: "mensagem"; message?: string; instagramHandle?: string; instagramFollowers?: number }>(req);
 
-    if (b.status && STATUS_ORDER.includes(b.status as LeadStatus)) l = await setStatus(l, b.status as LeadStatus);
+    if (b.status && STATUS_ORDER.includes(b.status as LeadStatus)) {
+      // antes de qualificar, confere de verdade se o negócio não tem site
+      if (["qualificado", "demo"].includes(b.status) && b.status !== l.status) l = await ensureSite(l);
+      l = await setStatus(l, b.status as LeadStatus);
+    }
     const next: Lead = { ...l };
     if (typeof b.notes === "string" && b.notes !== l.notes) {
       next.notes = b.notes;

@@ -87,7 +87,7 @@ function LeadsInner() {
     try {
       await api("/api/enrich", { method: "POST", json: { ids } });
       await reload();
-      toast(`Instagram procurado em ${ids.length} leads (${ids.length} créditos)`);
+      toast(`Site e Instagram conferidos em ${ids.length} leads (até ${ids.length * 2} créditos)`);
     } catch (e) {
       toast(e instanceof Error ? e.message : "Erro", true);
     } finally {

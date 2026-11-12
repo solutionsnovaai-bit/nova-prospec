@@ -1,6 +1,6 @@
 import "server-only";
 import { chat, parseJsonLoose } from "./ai";
-import { addHistory, saveLead } from "./leads";
+import { addHistory, ensureSite, saveLead } from "./leads";
 import { WEBSITE_LABEL } from "./phone";
 import { PAIN_LABEL, siteIsWeak, suggestProject } from "./score";
 import { getSettings } from "./settings";
@@ -13,6 +13,8 @@ export function leadBrief(l: Lead) {
     l.address && `Endereço: ${l.address}`,
     `Telefone: ${l.phone ?? "não informado"}${l.phoneKind ? ` (${l.phoneKind})` : ""}`,
     `Presença web: ${WEBSITE_LABEL[l.websiteKind]}${l.website ? ` — ${l.website}` : ""}`,
+    l.siteCheck?.found && `Atenção: o site foi achado na conferência; o Google Maps mostrava ${l.mapsWebsite ?? "nenhum link"}. Não diga que o negócio não tem site.`,
+    l.siteCheck && !l.siteCheck.found && `Conferência de site: procuramos site próprio${l.siteCheck.google ? " pelo endereço e no Google" : " pelo endereço"} e não achamos.`,
     l.audit &&
       `Auditoria do site: ${l.audit.ok ? "no ar" : "fora do ar"}; ${[
         l.audit.https === false && "sem https",
@@ -77,6 +79,7 @@ Devolva este JSON:
 }
 
 export async function analyzeLead(l: Lead, opts: { web?: boolean } = {}): Promise<Lead> {
+  l = await ensureSite(l); // nunca analisa "sem site" sem conferir antes
   const s = await getSettings();
   const offers = s.offers.map((o) => `- ${o.nome}${o.preco ? ` (${o.preco})` : ""}: ${o.quando}`).join("\n");
 

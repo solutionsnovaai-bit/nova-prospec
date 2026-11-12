@@ -3,6 +3,8 @@ import { auditSite, parseInstagramSnippet } from "./audit";
 import { db } from "./db";
 import { classifyWebsite } from "./phone";
 import { rescore } from "./score";
+import { findSite } from "./sitecheck";
+import { hostOf } from "./sitematch";
 import { webSearch } from "./sources";
 import type { FoundPlace, HistoryItem, Lead, LeadStatus } from "./types";
 
@@ -38,6 +40,10 @@ export async function saveFound(found: FoundPlace[]) {
       ? rescore({
           ...old,
           ...rest,
+          // site achado na conferência vale mais que o link do Google Maps
+          ...(old.siteCheck?.found && !["proprio", "construtor"].includes(rest.websiteKind)
+            ? { website: old.website, websiteKind: old.websiteKind, mapsWebsite: old.mapsWebsite ?? rest.website, siteCheck: old.siteCheck }
+            : {}),
           // dados do usuário ficam
           status: old.status,
           notes: old.notes,
@@ -80,6 +86,46 @@ export async function auditLead<T extends FoundPlace | Lead>(l: T): Promise<T> {
     instagram = { handle: h, url: `https://instagram.com/${h}`, source: "site" };
   }
   return rescore({ ...l, audit, instagram, instagramChecked: l.instagramChecked || !!instagram }) as T;
+}
+
+/**
+ * Confere se existe site próprio antes de afirmar "sem site" (o Google Maps muitas vezes só mostra o Instagram).
+ * Sem `google` é grátis; com `google` faz 1 busca. Quando acha, troca o link, audita o site e refaz a pontuação.
+ */
+export async function checkSite<T extends FoundPlace | Lead>(l: T, opts: { google?: boolean } = {}): Promise<T> {
+  if (["proprio", "construtor"].includes(l.websiteKind)) return l;
+  if (l.siteCheck && (l.siteCheck.google || !opts.google)) return l;
+  const r = await findSite(l, opts);
+  const patch: Partial<Lead> = { siteCheck: { at: now(), found: r.found, how: r.how, google: r.google || !!l.siteCheck?.google } };
+  const f = r.instagram?.followers;
+  if (l.instagram && f !== undefined && l.instagram.followers === undefined)
+    patch.instagram = { ...l.instagram, followers: f, posts: r.instagram?.posts ?? l.instagram.posts, quality: f < 1000 ? "fraco" : f < 5000 ? "ok" : "bom", checkedAt: now() };
+  if (r.found) {
+    patch.mapsWebsite = l.website;
+    patch.website = r.found;
+    patch.websiteKind = classifyWebsite(r.found).kind;
+    patch.audit = await auditSite(r.found);
+    if ("history" in l) {
+      const old = l as Lead;
+      let h = addHistory(old, "auditoria", `Site encontrado na conferência: ${hostOf(r.found)}${l.website ? " (o Google mostrava outro link)" : ""}`);
+      if (old.ai) {
+        h = addHistory(h, "ia", "Análise anterior descartada: tinha sido feita sem saber do site");
+        patch.ai = undefined;
+      }
+      patch.history = h.history;
+    }
+  }
+  return rescore({ ...l, ...patch }) as T;
+}
+
+/** Conferência completa (endereço + Google) de um lead salvo; nunca derruba quem chamou. */
+export async function ensureSite(l: Lead): Promise<Lead> {
+  try {
+    const c = await checkSite(l, { google: true });
+    return c === l ? l : await saveLead(c);
+  } catch {
+    return l;
+  }
 }
 
 /** Procura o Instagram no Google e lê seguidores pelo trecho do resultado. */

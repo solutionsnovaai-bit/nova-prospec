@@ -64,6 +64,7 @@ export default function LeadPage() {
 
   const analyze = (web: boolean) => act(web ? "iaweb" : "ia", () => api("/api/ai/analyze", { method: "POST", json: { id: l.id, web } }), "Análise pronta");
   const audit = () => act("audit", () => api("/api/audit", { method: "POST", json: { ids: [l.id] } }), "Site auditado");
+  const checkSite = () => act("site", () => api("/api/sitecheck", { method: "POST", json: { ids: [l.id], google: true } }), "Site conferido");
   const findIg = () => act("ig", () => api("/api/enrich", { method: "POST", json: { ids: [l.id] } }), "Instagram verificado");
   const remove = async () => {
     if (!window.confirm(`Apagar ${l.name} da base?`)) return;
@@ -206,6 +207,17 @@ export default function LeadPage() {
                 <dd>
                   <span className={l.websiteKind === "proprio" ? "" : "gold"}>{WEBSITE_LABEL[l.websiteKind]}</span>
                   {l.website && <> · <a className="link" href={l.website} target="_blank" rel="noreferrer">abrir <ExternalLink size={11} /></a></>}
+                  {l.siteCheck?.found && <div className="gold" style={{ fontSize: 12, marginTop: 4 }}>Site achado na conferência{l.mapsWebsite ? "; o Google mostrava outro link" : ""}.</div>}
+                  {l.websiteKind !== "proprio" && l.websiteKind !== "construtor" && (
+                    <div className="muted" style={{ fontSize: 12, marginTop: 4, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                      <span>{l.siteCheck?.google ? `Conferido no Google (${relTime(l.siteCheck.at)}): nenhum site próprio.` : l.siteCheck ? "Conferido só pelo endereço; falta o Google." : "Ainda não conferido se existe site."}</span>
+                      {!l.siteCheck?.google && !isSample && (
+                        <button className="btn sm" disabled={!!busy} onClick={checkSite}>
+                          {busy === "site" ? <Spinner size={12} /> : <Search size={13} strokeWidth={1.6} />} Conferir site
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </dd>
                 <dt>Instagram</dt>
                 <dd>

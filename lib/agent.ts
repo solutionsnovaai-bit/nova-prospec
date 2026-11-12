@@ -1,7 +1,7 @@
 import "server-only";
 import { chat, type ChatMessage, type ToolDef } from "./ai";
 import { analyzeLead } from "./analyze";
-import { addHistory, auditLead, findInstagram, getLead, listLeads, saveFound, saveLead, setStatus } from "./leads";
+import { addHistory, auditLead, findInstagram, getLead, listLeads, saveFound, saveLead, setStatus, ensureSite } from "./leads";
 import { WEBSITE_LABEL } from "./phone";
 import { PAIN_LABEL } from "./score";
 import { getSettings } from "./settings";
@@ -190,10 +190,13 @@ async function runTool(name: string, args: Record<string, unknown>, touched: Set
     case "atualizar_lead": {
       let l = await getLead(String(args.id));
       if (!l) return { erro: "lead não encontrado" };
-      if (args.status && STATUS_ORDER.includes(args.status as LeadStatus)) l = await setStatus(l, args.status as LeadStatus);
+      if (args.status && STATUS_ORDER.includes(args.status as LeadStatus)) {
+        if (["qualificado", "demo"].includes(String(args.status)) && l.status !== args.status) l = await ensureSite(l);
+        l = await setStatus(l, args.status as LeadStatus);
+      }
       if (args.nota) l = await saveLead(addHistory({ ...l, notes: [l.notes, String(args.nota)].filter(Boolean).join("\n") }, "nota", String(args.nota)));
       touched.add(l.id);
-      return { ok: true, id: l.id, status: l.status };
+      return { ok: true, id: l.id, status: l.status, ...(l.siteCheck?.found ? { aviso: `Atenção: este negócio já tem site próprio (${l.website}), achado na conferência. Avise isso.` } : {}) };
     }
   }
   return { erro: `ferramenta ${name} não existe` };

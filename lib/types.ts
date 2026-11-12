@@ -111,6 +111,14 @@ export interface AiAnalysis {
   prioridade: "alta" | "media" | "baixa";
 }
 
+/** Conferência de site: o painel procurou o site próprio antes de afirmar "sem site". */
+export interface SiteCheck {
+  at: string;
+  found?: string; // site achado na conferência
+  how?: "dominio" | "google";
+  google?: boolean; // já passou pela busca no Google
+}
+
 export interface HistoryItem {
   at: string;
   type: "criado" | "status" | "nota" | "mensagem" | "ia" | "auditoria" | "instagram" | "demo";
@@ -135,6 +143,8 @@ export interface Lead {
   phoneKind?: "celular" | "fixo";
   website?: string;
   websiteKind: WebsiteKind;
+  siteCheck?: SiteCheck;
+  mapsWebsite?: string; // link que o Google Maps mostrava antes de acharmos o site
   instagram?: InstagramInfo;
   instagramChecked?: boolean;
   rating?: number;
