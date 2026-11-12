@@ -3,7 +3,7 @@ import { ArrowLeft, Bot, ExternalLink, Globe, MapPin, RefreshCw, Search, Trash2 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Pains, Score, Spinner, toast, WhatsAppButton } from "@/components/ui";
+import { BrainLoader, Pains, Score, Spinner, toast, WhatsAppButton } from "@/components/ui";
 import { api, fillMessage, fmt, patchLeadCache, relTime, useLead, useSettings } from "@/lib/client";
 import { contactWindow } from "@/lib/niches";
 import { WEBSITE_LABEL } from "@/lib/phone";
@@ -34,7 +34,7 @@ export default function LeadPage() {
   }, [lead?.id, lead?.ai?.at, lead?.demoUrl, settings?.messageBase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (error) return <div className="notice neg">{error.message}</div>;
-  if (isLoading || !lead) return <div className="muted"><Spinner /> carregando…</div>;
+  if (isLoading || !lead) return <BrainLoader />;
   const l = lead;
   const isSample = l.source === "exemplo";
 

@@ -148,3 +148,15 @@ export function Count({ n }: { n: number }) {
   }, [n]);
   return <>{new Intl.NumberFormat("pt-BR").format(v)}</>;
 }
+
+/** Carregando: o cérebro do logo pulsa dentro de um anel que gira. */
+export function BrainLoader({ label = "Carregando" }: { label?: string }) {
+  return (
+    <div className="brainload" role="status" aria-label={label}>
+      <div className="b">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo-mark.webp" alt="" />
+      </div>
+    </div>
+  );
+}

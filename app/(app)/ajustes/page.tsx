@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Spinner, toast } from "@/components/ui";
+import { BrainLoader, Spinner, toast } from "@/components/ui";
 import { api, fmt, useLeads, useSettings, useUsage } from "@/lib/client";
 import type { KeyName, PublicSettings } from "@/lib/types";
 
@@ -57,7 +57,7 @@ export default function AjustesPage() {
     }
   };
 
-  if (!settings || !f || !ai) return <div className="muted"><Spinner /> carregando…</div>;
+  if (!settings || !f || !ai) return <BrainLoader />;
   const prov = providers?.[ai.provider];
   const modelList = [...new Set([...(prov?.suggested ?? []), ...models, ai.model].filter(Boolean))];
   const samples = (leads ?? []).filter((l) => l.source === "exemplo").length;

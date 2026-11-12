@@ -519,3 +519,25 @@ button, a, input, select { touch-action: manipulation; }
   .hero.full .sys { font-size: 11px; gap: 4px 14px; }
   .main { padding-bottom: calc(86px + env(safe-area-inset-bottom)); }
 }
+
+/* ---------- logo animado: carregamento e troca de aba ---------- */
+.brainload { display: grid; place-items: center; min-height: 52vh; animation: none !important; }
+.brainload .b { position: relative; width: 156px; height: 156px; display: grid; place-items: center; }
+.brainload img { width: 116px; height: 116px; animation: brainpulse 1.5s ease-in-out infinite; filter: drop-shadow(0 0 18px rgba(214, 178, 94, 0.45)); }
+.brainload .b::before {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0 60%, #3ecf8e 78%, #d6b25e 93%, transparent 100%);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+  animation: spin 1.1s linear infinite;
+}
+.brainload .b::after { content: ""; position: absolute; inset: 12px; border-radius: 50%; border: 1px solid rgba(214, 178, 94, 0.16); }
+@keyframes brainpulse { 0%, 100% { transform: scale(0.94); opacity: 0.85; } 50% { transform: scale(1.05); opacity: 1; } }
+.route-fx {
+  position: fixed; left: calc(var(--rail) + (100vw - var(--rail)) / 2); top: 50%; width: 190px; height: 190px; margin: -95px 0 0 -95px;
+  z-index: 30; pointer-events: none; opacity: 0; animation: routefx 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both !important;
+}
+.route-fx img { width: 100%; height: 100%; filter: drop-shadow(0 0 30px rgba(214, 178, 94, 0.6)); }
+@keyframes routefx { 0% { opacity: 0; transform: scale(0.6) rotate(-8deg); } 35% { opacity: 0.92; transform: scale(1.05) rotate(0); } 100% { opacity: 0; transform: scale(1.45); } }
+@media (max-width: 760px) { .route-fx { left: 50%; width: 150px; height: 150px; margin: -75px 0 0 -75px; } }
+@media (prefers-reduced-motion: reduce) { .route-fx { display: none; } }

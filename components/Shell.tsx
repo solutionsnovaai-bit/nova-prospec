@@ -80,6 +80,11 @@ export function Shell({ children }: { children: ReactNode }) {
       </header>
 
       <main className="main">
+        {/* o cérebro pisca a cada troca de aba */}
+        <div className="route-fx" key={path} aria-hidden>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-mark.webp" alt="" />
+        </div>
         <div className="page">{children}</div>
       </main>
 
