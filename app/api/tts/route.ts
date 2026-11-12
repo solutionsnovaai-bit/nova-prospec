@@ -47,7 +47,7 @@ export async function POST(req: Request) {
   const g = await guard();
   if (g) return g;
   try {
-    const text = String((await body<{ text?: string }>(req)).text ?? "").trim().slice(0, 600);
+    const text = String((await body<{ text?: string }>(req)).text ?? "").trim().slice(0, 900);
     if (!text) return fail(Object.assign(new Error("Texto vazio."), { status: 400 }));
     const el = await getKey("elevenlabs");
     if (el) {

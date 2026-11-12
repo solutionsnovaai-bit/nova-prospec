@@ -3,7 +3,7 @@ import { Mic, Send, Square, Volume2, VolumeX } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, fmt, useLeads, useSettings, useUsage } from "@/lib/client";
-import { speakNatural, stopSpeaking, useVoice } from "@/lib/voice";
+import { speakNatural, stopSpeaking, unlockAudio, useVoice } from "@/lib/voice";
 import type { Lead } from "@/lib/types";
 import { Orb, type OrbState } from "./Orb";
 import { Spinner, toast } from "./ui";
@@ -24,7 +24,9 @@ const DAY = 86400000;
 /** Briefing do dia, calculado da base (sem gastar IA). */
 export function briefing(leads: Lead[] | undefined, name: string) {
   const h = new Date().getHours();
-  const greet = `${h < 5 ? "Boa noite" : h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite"}, ${name}.`;
+  const part = h < 5 ? "boa noite" : h < 12 ? "bom dia" : h < 18 ? "boa tarde" : "boa noite";
+  const opens = [`${part[0].toUpperCase()}${part.slice(1)}, ${name}.`, `Opa, ${part}, ${name}.`, `${name}, ${part}.`, `E aí, ${name}, ${part}.`];
+  const greet = opens[new Date().getDate() % opens.length];
   const all = (leads ?? []).filter((l) => l.status !== "descartado" && !l.optOut);
   if (!all.length) return { greet, text: "A base está vazia. Me diga um nicho e um bairro que eu faço a primeira varredura.", empty: true };
   const open = all.filter((l) => ["novo", "qualificado", "demo"].includes(l.status));
@@ -147,8 +149,10 @@ export function Assistant({ full }: { full?: boolean }) {
   const natural = !!(settings?.keys.elevenlabs?.set || settings?.keys.lmnt?.set);
   const say = (t: string) => voiceOn && speakNatural(t, natural, { onStart: () => setSpeaking(true), onEnd: () => setSpeaking(false) });
   const ask = async (t: string, spoken = false) => {
+    unlockAudio(); // dentro do toque: libera o som no iPhone
     setText("");
     const reply = await send(t);
+    if (reply && full && !voiceOn) setChatOpen(true); // sem voz, mostra a resposta
     if (reply && (spoken || voiceOn)) say(reply);
   };
   const voice = useVoice((t) => ask(t, true), (m) => toast(m, true));
@@ -157,7 +161,10 @@ export function Assistant({ full }: { full?: boolean }) {
   const state: OrbState = voice.listening ? "listening" : busy || voice.working ? "thinking" : speaking ? "speaking" : "idle";
   const lastUser = [...msgs].reverse().find((m) => m.role === "user");
   const lastAi = msgs[msgs.length - 1]?.role === "assistant" ? msgs[msgs.length - 1] : undefined;
-  const hint = { idle: "Toque no orbe e fale", listening: "Ouvindo…", thinking: "Trabalhando…", speaking: "Falando · toque para calar" }[state];
+  const hint =
+    voice.listening && voice.interim
+      ? voice.interim
+      : { idle: "Toque no orbe e fale", listening: "Ouvindo… toque de novo para enviar", thinking: "Trabalhando…", speaking: "Falando · toque para calar" }[state];
 
   const orbClick = () => {
     if (speaking) {

@@ -3,6 +3,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+const isIOS = () =>
+  typeof navigator !== "undefined" && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+
 function cleanForSpeech(text: string) {
   const t = text
     .replace(/https?:\/\/\S+/g, "")
@@ -10,13 +13,78 @@ function cleanForSpeech(text: string) {
     .replace(/\s*\n+\s*/g, ". ")
     .replace(/\s+/g, " ")
     .trim();
-  if (t.length <= 340) return t;
-  const cut = t.slice(0, 340);
+  if (t.length <= 700) return t;
+  const cut = t.slice(0, 700);
   const end = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("! "), cut.lastIndexOf("? "));
-  return (end > 120 ? cut.slice(0, end + 1) : cut) + " O resto está na tela.";
+  return (end > 200 ? cut.slice(0, end + 1) : cut) + " O resto está na tela.";
 }
 
-/** Fala em português pelo próprio navegador (grátis). */
+let player: HTMLAudioElement | null = null;
+let actx: AudioContext | null = null;
+let endCb: (() => void) | null = null;
+let primed = false;
+let synthPrimed = false;
+
+/** WAV de silêncio (0,1 s) montado na hora, para "acordar" o áudio. */
+function silentUrl() {
+  const n = 800;
+  const b = new Uint8Array(44 + n);
+  const v = new DataView(b.buffer);
+  const w = (o: number, s: string) => {
+    for (let i = 0; i < s.length; i++) b[o + i] = s.charCodeAt(i);
+  };
+  w(0, "RIFF");
+  v.setUint32(4, 36 + n, true);
+  w(8, "WAVEfmt ");
+  v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true);
+  v.setUint16(22, 1, true);
+  v.setUint32(24, 8000, true);
+  v.setUint32(28, 8000, true);
+  v.setUint16(32, 1, true);
+  v.setUint16(34, 8, true);
+  w(36, "data");
+  v.setUint32(40, n, true);
+  b.fill(128, 44);
+  return URL.createObjectURL(new Blob([b], { type: "audio/wav" }));
+}
+
+/**
+ * Chamar DENTRO de um toque ou clique. O iPhone só toca som quando isso começa num gesto;
+ * aqui o mesmo tocador é "acordado" com silêncio e depois reaproveitado para a fala.
+ */
+export function unlockAudio() {
+  if (typeof window === "undefined") return;
+  try {
+    if (!player) {
+      player = new Audio();
+      player.preload = "auto";
+      player.setAttribute("playsinline", "");
+    }
+    if (!primed) {
+      primed = true;
+      player.src = silentUrl();
+      player.play().catch((e) => {
+        if (e?.name === "NotAllowedError") primed = false;
+      });
+    }
+    const AC = window.AudioContext || (window as any).webkitAudioContext;
+    if (AC) {
+      actx = actx ?? new AC();
+      if (actx!.state === "suspended") actx!.resume().catch(() => null);
+    }
+    if ("speechSynthesis" in window && !synthPrimed) {
+      synthPrimed = true;
+      const u = new SpeechSynthesisUtterance(" ");
+      u.volume = 0;
+      window.speechSynthesis.speak(u);
+    }
+  } catch {
+    /* segue sem áudio */
+  }
+}
+
+/** Fala em português pela voz do próprio navegador (reserva). */
 export function speak(text: string, cb?: { onStart?: () => void; onEnd?: () => void }) {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return cb?.onEnd?.();
   const synth = window.speechSynthesis;
@@ -33,48 +101,52 @@ export function speak(text: string, cb?: { onStart?: () => void; onEnd?: () => v
   synth.speak(u);
 }
 
-let current: HTMLAudioElement | null = null;
-
 export function stopSpeaking() {
-  if (current) {
-    current.pause();
-    current = null;
+  if (player && !player.paused) player.pause();
+  if (endCb) {
+    const f = endCb;
+    endCb = null;
+    f();
   }
   if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
 }
 
-/** Voz natural (ElevenLabs ou LMNT pelo servidor); se não houver chave ou saldo, cai na voz do navegador. */
+/** Voz natural (ElevenLabs ou LMNT pelo servidor); sem chave, sem saldo ou se o aparelho barrar, cai na voz do navegador. */
 export async function speakNatural(text: string, natural: boolean, cb?: { onStart?: () => void; onEnd?: () => void }) {
   stopSpeaking();
+  unlockAudio();
   if (natural) {
     try {
       const res = await fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: cleanForSpeech(text) }) });
       if (res.ok) {
         const url = URL.createObjectURL(await res.blob());
-        const a = new Audio(url);
-        current = a;
+        const a = player ?? (player = new Audio());
+        let finished = false;
         const done = () => {
+          if (finished) return;
+          finished = true;
           URL.revokeObjectURL(url);
-          if (current === a) current = null;
+          if (endCb === done) endCb = null;
           cb?.onEnd?.();
         };
-        a.onplay = () => cb?.onStart?.();
+        a.onplaying = () => cb?.onStart?.();
         a.onended = done;
         a.onerror = done;
-        a.onpause = () => current !== a && done();
+        endCb = done;
+        a.src = url;
         await a.play();
         return;
       }
     } catch {
-      /* cai na voz do navegador */
+      endCb = null; /* cai na voz do navegador */
     }
   }
   speak(text, cb);
 }
 
 /**
- * Microfone: usa o reconhecimento de fala do navegador quando existe (Chrome, Android);
- * senão grava e transcreve pelo Whisper do Groq (iPhone e outros).
+ * Microfone. No iPhone (Safari e Chrome) grava e transcreve pelo Whisper do Groq, que é o caminho confiável lá;
+ * nos outros navegadores usa o reconhecimento de fala embutido, com a gravação como reserva.
  */
 export function useVoice(onFinal: (text: string) => void, onError?: (msg: string) => void) {
   const [listening, setListening] = useState(false);
@@ -82,12 +154,15 @@ export function useVoice(onFinal: (text: string) => void, onError?: (msg: string
   const [level, setLevel] = useState(0);
   const [working, setWorking] = useState(false);
   const rec = useRef<any>(null);
-  const media = useRef<{ stream: MediaStream; recorder: MediaRecorder; ctx: AudioContext; raf: number } | null>(null);
+  const media = useRef<{ recorder: MediaRecorder; raf: number } | null>(null);
   const finalText = useRef("");
+  const lastInterim = useRef("");
+  const manual = useRef(false);
   const cb = useRef({ onFinal, onError });
   cb.current = { onFinal, onError };
 
   const stop = useCallback(() => {
+    manual.current = true;
     try {
       rec.current?.stop();
     } catch {}
@@ -98,6 +173,7 @@ export function useVoice(onFinal: (text: string) => void, onError?: (msg: string
     const r = new SR();
     rec.current = r;
     finalText.current = "";
+    lastInterim.current = "";
     r.lang = "pt-BR";
     r.interimResults = true;
     r.continuous = false;
@@ -109,6 +185,7 @@ export function useVoice(onFinal: (text: string) => void, onError?: (msg: string
         if (e.results[i].isFinal) finalText.current += t;
         else int += t;
       }
+      lastInterim.current = int;
       setInterim((finalText.current + " " + int).trim());
       setLevel(0.9);
       clearTimeout(pulse);
@@ -121,7 +198,7 @@ export function useVoice(onFinal: (text: string) => void, onError?: (msg: string
     r.onend = () => {
       setListening(false);
       setLevel(0);
-      const t = finalText.current.trim();
+      const t = (finalText.current || lastInterim.current).trim(); // alguns navegadores nunca marcam como final
       setInterim("");
       if (t) cb.current.onFinal(t);
     };
@@ -132,69 +209,81 @@ export function useVoice(onFinal: (text: string) => void, onError?: (msg: string
 
   const startRecorder = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const an = ctx.createAnalyser();
-    an.fftSize = 512;
-    ctx.createMediaStreamSource(stream).connect(an);
-    const buf = new Uint8Array(an.fftSize);
+    const live = !!actx && actx.state === "running";
+    const an = live ? actx!.createAnalyser() : null;
+    const srcNode = live ? actx!.createMediaStreamSource(stream) : null;
+    if (an && srcNode) {
+      an.fftSize = 512;
+      srcNode.connect(an);
+    }
+    const buf = new Uint8Array(512);
     const recorder = new MediaRecorder(stream);
     const chunks: Blob[] = [];
-    let heard = false;
+    let heard = !live; // sem medidor de volume, confia no toque para encerrar
     let quiet = 0;
     const started = Date.now();
     const tick = () => {
-      an.getByteTimeDomainData(buf);
-      let sum = 0;
-      for (const v of buf) sum += (v - 128) * (v - 128);
-      const rms = Math.sqrt(sum / buf.length) / 128;
-      setLevel(Math.min(1, rms * 6));
-      if (rms > 0.04) {
-        heard = true;
-        quiet = 0;
-      } else quiet++;
-      // para sozinho: 1,5 s de silêncio depois de ouvir fala, ou 20 s no total
-      if ((heard && quiet > 90) || Date.now() - started > 20000) recorder.state !== "inactive" && recorder.stop();
+      if (an) {
+        an.getByteTimeDomainData(buf);
+        let sum = 0;
+        for (const v of buf) sum += (v - 128) * (v - 128);
+        const rms = Math.sqrt(sum / buf.length) / 128;
+        setLevel(Math.min(1, rms * 6));
+        if (rms > 0.04) {
+          heard = true;
+          quiet = 0;
+        } else quiet++;
+      } else setLevel(0.5);
+      const age = Date.now() - started;
+      // para sozinho: 1,3 s de silêncio depois da fala; 7 s sem ouvir nada; ou 20 s no total
+      if ((an && heard && quiet > 80) || (an && !heard && age > 7000) || age > 20000) recorder.state !== "inactive" && recorder.stop();
       else if (media.current) media.current.raf = requestAnimationFrame(tick);
     };
     recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
     recorder.onstop = async () => {
       cancelAnimationFrame(media.current?.raf ?? 0);
       stream.getTracks().forEach((t) => t.stop());
-      ctx.close().catch(() => null);
+      try {
+        srcNode?.disconnect();
+      } catch {}
       media.current = null;
       setListening(false);
       setLevel(0);
-      if (!heard) return;
+      if (!heard && !manual.current) return cb.current.onError?.("Não ouvi nada. Toque no orbe e fale de novo.");
       setWorking(true);
       try {
-        const type = recorder.mimeType || "audio/webm";
+        const type = recorder.mimeType || chunks[0]?.type || "audio/mp4";
         const fd = new FormData();
-        fd.append("audio", new Blob(chunks, { type }), type.includes("mp4") ? "fala.mp4" : "fala.webm");
+        fd.append("audio", new Blob(chunks, { type }), /webm/.test(type) ? "fala.webm" : /ogg/.test(type) ? "fala.ogg" : "fala.mp4");
         const res = await fetch("/api/ai/transcribe", { method: "POST", body: fd });
         const j = await res.json();
         if (!res.ok) throw new Error(j.error ?? "erro");
         if (j.text?.trim()) cb.current.onFinal(j.text.trim());
+        else cb.current.onError?.("Não entendi o áudio. Fala de novo?");
       } catch (e) {
         cb.current.onError?.(e instanceof Error ? e.message : "Não consegui transcrever.");
       } finally {
         setWorking(false);
       }
     };
-    media.current = { stream, recorder, ctx, raf: requestAnimationFrame(tick) };
+    media.current = { recorder, raf: requestAnimationFrame(tick) };
     recorder.start();
     setListening(true);
   };
 
   const start = useCallback(async () => {
     stopSpeaking();
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    unlockAudio(); // ainda dentro do toque
+    manual.current = false;
+    const SR = !isIOS() && ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+    const canRecord = "mediaDevices" in navigator && typeof MediaRecorder !== "undefined";
     try {
       if (SR) startBrowser(SR);
-      else if ("mediaDevices" in navigator && typeof MediaRecorder !== "undefined") await startRecorder();
-      else cb.current.onError?.("Este navegador não tem microfone disponível. Digite a mensagem.");
+      else if (canRecord) await startRecorder();
+      else cb.current.onError?.("Este navegador não libera o microfone. Digite a mensagem.");
     } catch {
       setListening(false);
-      cb.current.onError?.("Libere o microfone para este site no navegador.");
+      cb.current.onError?.("Libere o microfone para este site nas permissões do navegador.");
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

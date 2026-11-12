@@ -502,3 +502,20 @@ body::before {
 .drawer-h { display: flex; align-items: center; justify-content: space-between; position: sticky; top: -14px; background: #121116; padding: 6px 0 10px; margin-top: -6px; z-index: 1; }
 .drawer .msg { font-size: 13px; line-height: 20px; max-width: 100%; }
 @media (max-width: 760px) { .drawer { bottom: 56px; } }
+
+/* ---------- uso no celular ---------- */
+* { -webkit-tap-highlight-color: transparent; }
+button, a, input, select { touch-action: manipulation; }
+.hero-hint { max-width: 92%; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 760px) {
+  .input, .select, .textarea { font-size: 16px; } /* abaixo de 16px o iPhone dá zoom ao tocar no campo */
+  .btn.sm, .chip { height: 36px; }
+  .btn.sm.icon { width: 36px; }
+  .hero.full { padding: 4px 12px 14px; border-radius: 10px; }
+  .hero.full .hero-input .btn.icon { width: 50px; height: 50px; }
+  .hero.full .hero-input .input { height: 50px; }
+  .hero.full .hero-hint { font-size: 15px; min-height: 22px; }
+  .hero.full .chips { gap: 8px; }
+  .hero.full .sys { font-size: 11px; gap: 4px 14px; }
+  .main { padding-bottom: calc(86px + env(safe-area-inset-bottom)); }
+}
