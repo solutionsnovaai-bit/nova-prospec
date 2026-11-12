@@ -125,6 +125,13 @@ export function Assistant({ full }: { full?: boolean }) {
   const [speaking, setSpeaking] = useState(false);
   const [voiceOn, setVoiceOn] = useState(true);
   const end = useRef<HTMLDivElement>(null);
+  const [vp, setVp] = useState({ w: 1280, h: 800 });
+  useEffect(() => {
+    const f = () => setVp({ w: window.innerWidth, h: window.innerHeight });
+    f();
+    window.addEventListener("resize", f);
+    return () => window.removeEventListener("resize", f);
+  }, []);
 
   useEffect(() => {
     try {
@@ -174,7 +181,7 @@ export function Assistant({ full }: { full?: boolean }) {
     <section className={`hero ${full ? "full" : ""}`} data-state={state}>
       {!full && <Circuits />}
       <div className="hero-orb">
-        <Orb state={state} level={voice.level} size={full ? 200 : 300} onClick={orbClick} />
+        <Orb state={state} level={voice.level} size={full ? Math.round(Math.max(180, Math.min(msgs.length ? 320 : 560, vp.h * (msgs.length ? 0.36 : 0.54), vp.w - 48))) : 300} onClick={orbClick} />
         <div className="hero-hint" data-state={state}>{hint}</div>
       </div>
 

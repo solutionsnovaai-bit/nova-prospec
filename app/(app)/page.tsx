@@ -3,11 +3,17 @@ import { ArrowUpRight, Radar } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { Assistant } from "@/components/Assistant";
+import { briefing } from "@/components/Assistant";
 import { PainMatrix } from "@/components/PainMatrix";
 import { Count, Pains, Score, Spinner, toast, WebLabel, WhatsAppButton } from "@/components/ui";
 import { api, fmt, patchLeadCache, useLeads, useSettings } from "@/lib/client";
+import { regionTier } from "@/lib/regions";
 import { STATUS_LABEL, type Lead, type LeadStatus } from "@/lib/types";
+
+const tierRank = (l: Lead) => {
+  const t = regionTier(`${l.district ?? ""} ${l.address ?? ""} ${l.city ?? ""}`) ?? regionTier(l.query);
+  return t === "prioridade" ? 0 : t === "regional" ? 2 : 1;
+};
 
 const OPEN: LeadStatus[] = ["novo", "qualificado", "demo"];
 const FUNNEL: LeadStatus[] = ["novo", "qualificado", "demo", "abordado", "respondeu", "negociando", "reuniao", "fechado"];
@@ -25,7 +31,7 @@ export default function Overview() {
     // fila: prévia pronta primeiro, depois score
     const queue = [...open]
       .filter((l) => l.phoneE164 || l.source === "exemplo")
-      .sort((a, b) => Number(!!b.demoUrl) - Number(!!a.demoUrl) || b.score - a.score)
+      .sort((a, b) => tierRank(a) - tierRank(b) || Number(!!b.demoUrl) - Number(!!a.demoUrl) || b.score - a.score)
       .slice(0, 6);
     const weekAgo = Date.now() - 7 * 86400000;
     const contactedWeek = all.filter((l) => l.contactedAt && new Date(l.contactedAt).getTime() > weekAgo).length;
@@ -66,11 +72,21 @@ export default function Overview() {
 
   const first = !isLoading && data.all.length === 0;
   const maxFunnel = Math.max(1, ...data.funnel.map((f) => f.n));
+  const b = briefing(leads, settings?.ownerName || "Victor");
   const replyRate = data.contacted ? Math.round((data.replied / data.contacted) * 100) : null;
 
   return (
     <>
-      <Assistant />
+      <div className="titlerow">
+        <div>
+          <h1>{b.greet}</h1>
+          <div className="sub" style={{ maxWidth: 820 }}>{isLoading ? <span className="skel" style={{ width: 360, height: 14 }} /> : b.text}</div>
+        </div>
+        <div className="actions">
+          <Link href="/radar" className="btn primary"><Radar size={15} strokeWidth={1.6} /> Buscar empresas</Link>
+          <Link href="/ia" className="btn">Falar com a Nova</Link>
+        </div>
+      </div>
 
       {first ? (
         <div className="panel" style={{ padding: 24, marginTop: "var(--gap)" }}>
@@ -141,7 +157,7 @@ export default function Overview() {
                       <div style={{ minWidth: 0 }}>
                         <div className="name ellipsis">{l.name}</div>
                         <div className="sub ellipsis">
-                          {[l.category, l.district].filter(Boolean).join(" · ")} · <WebLabel l={l} />
+                          {[l.category, l.district].filter(Boolean).join(" · ")} · <WebLabel l={l} />{tierRank(l) === 2 ? <span className="muted"> · regional</span> : null}
                         </div>
                       </div>
                       <div className="c-pains" style={{ minWidth: 0 }}>

@@ -473,3 +473,12 @@ body::before {
 .app[data-nav="open"] .rail .tip { display: none; }
 .app[data-nav="closed"] .rail .tip { left: 66px; }
 .rail .sep { display: none; }
+
+/* ---------- aba da Nova: orbe herói no centro ---------- */
+.hero.full { justify-items: center; padding: 10px 20px 20px; border-color: rgba(214, 178, 94, 0.14); background: radial-gradient(760px 560px at 50% 30%, rgba(214, 178, 94, 0.14), transparent 70%), #111015; min-height: calc(100dvh - 76px); align-content: start; }
+.hero.full .hero-body { width: 100%; max-width: 860px; }
+.hero.full .hero-brief { text-align: center; margin: 0 auto; font-size: 17px; line-height: 26px; }
+.hero.full .chips, .hero.full .sys { justify-content: center; }
+.hero.full .hero-chat { max-height: 30vh; min-height: 0; }
+.hero.full .hero-hint { font-size: 13px; }
+@media (max-width: 760px) { .hero.full { min-height: calc(100dvh - 160px); } }
