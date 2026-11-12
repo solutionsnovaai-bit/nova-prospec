@@ -8,7 +8,7 @@ import { NICHES } from "@/lib/niches";
 import { REGIONS } from "@/lib/regions";
 import type { FoundPlace, SourceId } from "@/lib/types";
 
-type Src = "auto" | "serpapi" | "serper" | "osm";
+type Src = "auto" | "serpapi" | "serper" | "searchapi" | "osm";
 const QUICK = ["hamburgueria", "petshop", "estetica", "barbearia", "salao", "pizzaria", "oficina", "roupas", "academia", "doceria"];
 
 export default function RadarPage() {
@@ -181,7 +181,7 @@ export default function RadarPage() {
             ))}
           </div>
           <div className="tabs" role="tablist" aria-label="Fonte">
-            {(["auto", "serpapi", "serper", "osm"] as Src[]).map((s) => (
+            {(["auto", "serpapi", "serper", "searchapi", "osm"] as Src[]).map((s) => (
               <button type="button" key={s} role="tab" aria-selected={source === s} onClick={() => setSource(s)}>
                 {srcLabel(s)}
               </button>
@@ -190,7 +190,7 @@ export default function RadarPage() {
           <div className="muted" style={{ fontSize: 12 }}>
             {source === "osm"
               ? "OpenStreetMap: grátis e ilimitado, mas com menos telefones e sem avaliações."
-              : `Cada busca traz até 20 empresas e gasta 1 crédito grátis${places.length > 1 ? ` por bairro (${places.length} no total)` : ""}. No automático: SerpApi → Serper → OpenStreetMap.`}
+              : `Cada busca traz até 20 empresas e gasta 1 crédito grátis${places.length > 1 ? ` por bairro (${places.length} no total)` : ""}. No automático: SerpApi → Serper → SearchApi → OpenStreetMap.`}
           </div>
           {err && <div className="notice neg">{err}</div>}
         </form>

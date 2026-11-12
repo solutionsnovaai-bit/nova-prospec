@@ -1,6 +1,6 @@
 // Tipos compartilhados entre servidor e painel.
 
-export type SourceId = "serpapi" | "serper" | "osm" | "manual" | "exemplo";
+export type SourceId = "serpapi" | "serper" | "searchapi" | "osm" | "manual" | "exemplo";
 
 export type LeadStatus =
   | "novo"
@@ -200,4 +200,4 @@ export interface PublicSettings {
   ownerName: string;
 }
 
-export type KeyName = "serpapi" | "serper" | "groq" | "openrouter" | "moonshot" | "custom" | "elevenlabs" | "lmnt";
+export type KeyName = "serpapi" | "serper" | "groq" | "openrouter" | "moonshot" | "custom" | "elevenlabs" | "lmnt" | "tavily" | "searchapi";

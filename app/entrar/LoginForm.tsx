@@ -73,7 +73,7 @@ export function LoginForm({ hasPassword }: { hasPassword: boolean }) {
       <div className="art">
         <RadarArt />
         <div style={{ position: "absolute", left: 32, bottom: 28, right: 32 }}>
-          <div style={{ fontSize: 13, color: "var(--muted)" }}>Nova Prospec</div>
+          <div style={{ fontSize: 13, color: "var(--muted)" }}>Nova AI Solutions</div>
           <div style={{ fontSize: 22, lineHeight: "30px", fontWeight: 500, maxWidth: 420, marginTop: 4 }}>
             Os comércios que estão perdendo cliente na internet, achados e organizados.
           </div>

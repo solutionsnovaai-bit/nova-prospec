@@ -5,7 +5,8 @@ import { addHistory, auditLead, findInstagram, getLead, listLeads, saveFound, sa
 import { WEBSITE_LABEL } from "./phone";
 import { PAIN_LABEL } from "./score";
 import { getSettings } from "./settings";
-import { runSearch, webSearch } from "./sources";
+import { runSearch, webAnswer } from "./sources";
+import { readPage } from "./sources/reader";
 import { NICHES } from "./niches";
 import { STATUS_ORDER, type Lead, type LeadStatus, type PainKey } from "./types";
 
@@ -16,6 +17,14 @@ const TOOLS: ToolDef[] = [
       name: "pesquisar_web",
       description: "Pesquisa no Google qualquer assunto: notícia, preço, concorrente, tendência, como fazer, dados de uma empresa ou pessoa pública. Use quando a resposta depender de informação recente ou de algo que você não tem certeza. Gasta 1 crédito de busca.",
       parameters: { type: "object", properties: { consulta: { type: "string", description: "o que procurar, em poucas palavras" } }, required: ["consulta"] },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "ler_pagina",
+      description: "Abre um link e lê o conteúdo da página (site de empresa, notícia, artigo, cardápio). Use depois de pesquisar_web quando precisar do detalhe, ou quando receber um link na conversa. Grátis, não gasta crédito de busca.",
+      parameters: { type: "object", properties: { url: { type: "string", description: "endereço completo, começando com https://" } }, required: ["url"] },
     },
   },
   {
@@ -106,8 +115,14 @@ function brief(l: Lead) {
 async function runTool(name: string, args: Record<string, unknown>, touched: Set<string>): Promise<unknown> {
   switch (name) {
     case "pesquisar_web": {
-      const r = await webSearch(String(args.consulta ?? ""));
+      const r = await webAnswer(String(args.consulta ?? ""));
       return { resultados: r.slice(0, 6).map((x) => ({ titulo: x.title, trecho: x.snippet, link: x.link })) };
+    }
+    case "ler_pagina": {
+      const url = String(args.url ?? "").trim();
+      if (!/^https?:\/\/\S+$/i.test(url)) return { erro: "Link inválido." };
+      const texto = await readPage(url);
+      return texto ? { url, texto } : { erro: "Não consegui abrir essa página." };
     }
     case "buscar_empresas": {
       const nicho = String(args.nicho ?? "");
@@ -206,6 +221,7 @@ O QUE VOCÊ FAZ
 - Use as ferramentas para buscar e consultar dados reais. Nunca invente empresa, telefone ou número; se não souber, diga.
 - Regiões: priorize bairros de maior poder de compra (Tatuapé, Anália Franco, Mooca, Carrão, Paulista, Pinheiros) e as cidades Rio de Janeiro, Piracicaba e Porto Alegre; Vila Matilde e Itaquera também servem; Itaim Paulista e São Miguel ficam por último. Sem local no pedido, sugira uma região prioritária.
 - Para fato recente ou que você não tem certeza (notícia, preço, concorrente, lançamento, placar, lei nova), use pesquisar_web em vez de chutar. Responda só com o que os resultados trazem e diga em poucas palavras de onde veio.
+- Para ler o conteúdo de um link (resultado da pesquisa ou enviado na conversa), use ler_pagina: é grátis e não conta como busca.
 - buscar_empresas, procurar_instagram e pesquisar_web gastam cota grátis de busca: no máximo 3 por pedido e, apenas quando chamar uma delas, diga quantas usou.`;
 }
 

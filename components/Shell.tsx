@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { api } from "@/lib/client";
-import { Mark } from "./Mark";
+import { Brand, Mark } from "./Mark";
 import { Toaster } from "./ui";
 
 const NAV = [
@@ -51,9 +51,9 @@ export function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="app" data-nav={open ? "open" : "closed"}>
       <nav className="rail" aria-label="Navegação">
-        <Link href="/" className="mark" aria-label="Nova Prospec">
+        <Link href="/" className="mark" aria-label="Nova AI Solutions">
           <Mark size={open ? 196 : 78} />
-          <span className="brandname">Nova Prospec</span>
+          <span className="brandname"><Brand /></span>
         </Link>
         {NAV.map((n) => (
           <Link key={n.href} href={n.href} aria-current={active(path, n.href) ? "page" : undefined} aria-label={n.label}>
@@ -82,7 +82,7 @@ export function Shell({ children }: { children: ReactNode }) {
 
       <header className="topbar">
         <Link href="/" className="brand">
-          <Mark size={48} /> Nova Prospec
+          <Mark size={58} /> <Brand size="sm" />
         </Link>
         <Link href="/ajustes" className="btn ghost icon" aria-label="Ajustes">
           <Settings size={18} strokeWidth={1.5} />
@@ -113,7 +113,7 @@ export function Shell({ children }: { children: ReactNode }) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/logo-mark.webp" alt="" />
             </div>
-            <div className="splash-name">Nova Prospec</div>
+            <div className="splash-name"><Brand size="lg" /></div>
             <div className="splash-msgs">
               <span>Ligando o radar</span>
               <span>Carregando a base de leads</span>

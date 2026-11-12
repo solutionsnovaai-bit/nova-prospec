@@ -8,6 +8,8 @@ const KEYS: { id: KeyName; label: string; hint: string; url: string }[] = [
   { id: "groq", label: "Groq (IA: GPT-OSS, Qwen)", hint: "grátis, sem cartão", url: "https://console.groq.com/keys" },
   { id: "serpapi", label: "SerpApi (Google Maps)", hint: "250 buscas grátis por mês", url: "https://serpapi.com/manage-api-key" },
   { id: "serper", label: "Serper (Google Maps e busca)", hint: "2.500 créditos grátis, uma vez", url: "https://serper.dev/api-keys" },
+  { id: "tavily", label: "Tavily (pesquisa online da Nova)", hint: "1.000 por mês, grátis, renova", url: "https://app.tavily.com" },
+  { id: "searchapi", label: "SearchApi (Google Maps, reserva)", hint: "100 buscas grátis", url: "https://www.searchapi.io" },
   { id: "elevenlabs", label: "ElevenLabs (voz natural da Nova)", hint: "grátis, 10 mil créditos por mês", url: "https://elevenlabs.io/app/settings/api-keys" },
   { id: "lmnt", label: "LMNT (voz reserva)", hint: "opcional", url: "https://app.lmnt.com/account" },
   { id: "openrouter", label: "OpenRouter (opcional)", hint: "modelos :free", url: "https://openrouter.ai/settings/keys" },

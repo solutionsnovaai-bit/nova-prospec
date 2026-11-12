@@ -3,20 +3,23 @@ import { bumpUsage, getKey, getSettings, monthKey } from "../settings";
 import type { ProviderUsage, SourceId } from "../types";
 import { SourceError, type SearchInput, type SearchOutput } from "./common";
 import { osmSearch } from "./osm";
+import { searchapiSearch } from "./searchapi";
+import { tavilyWeb } from "./tavily";
 import { serpapiAccount, serpapiSearch, serpapiWeb } from "./serpapi";
 import { serperSearch, serperWeb } from "./serper";
 
 export { SourceError };
 
-export type SearchSource = "auto" | "serpapi" | "serper" | "osm";
+export type SearchSource = "auto" | "serpapi" | "serper" | "searchapi" | "osm";
 
 export async function runSearch(source: SearchSource, input: SearchInput): Promise<SearchOutput & { used: SourceId }> {
   const s = await getSettings();
   const serpapi = await getKey("serpapi", s);
   const serper = await getKey("serper", s);
 
-  const order: SourceId[] =
-    source === "auto" ? (["serpapi", "serper", "osm"] as SourceId[]).filter((x) => x === "osm" || (x === "serpapi" ? serpapi : serper)) : [source];
+  const searchapi = await getKey("searchapi", s);
+  const has: Partial<Record<SourceId, unknown>> = { serpapi, serper, searchapi, osm: true };
+  const order: SourceId[] = source === "auto" ? (["serpapi", "serper", "searchapi", "osm"] as SourceId[]).filter((x) => has[x]) : [source];
 
   let lastErr: unknown;
   for (const src of order) {
@@ -33,6 +36,12 @@ export async function runSearch(source: SearchSource, input: SearchInput): Promi
         await bumpUsage("serper", out.cost ?? 1);
         await bumpUsage("serper_total", out.cost ?? 1);
         return { ...out, used: "serper" };
+      }
+      if (src === "searchapi") {
+        if (!searchapi) throw new SourceError("Coloque a chave da SearchApi em Ajustes.", 400);
+        const out = await searchapiSearch(searchapi, input);
+        await bumpUsage("searchapi_total", out.cost ?? 1);
+        return { ...out, used: "searchapi" };
       }
       const out = await osmSearch(input);
       return { ...out, used: "osm" };
@@ -69,11 +78,27 @@ export async function webSearch(q: string) {
   throw new SourceError("Para procurar Instagram, coloque a chave do Serper ou da SerpApi em Ajustes.", 400);
 }
 
+/** Pesquisa para a Nova: Tavily primeiro (renova todo mês); sem chave ou com erro, cai no Google como antes. */
+export async function webAnswer(q: string): Promise<{ title?: string; link?: string; snippet?: string }[]> {
+  const tavily = await getKey("tavily");
+  if (tavily) {
+    try {
+      const r = await tavilyWeb(tavily, q);
+      await bumpUsage("tavily", 1);
+      if (r.length) return r;
+    } catch {
+      /* cai no Google */
+    }
+  }
+  return webSearch(q);
+}
+
 export async function providersUsage(): Promise<ProviderUsage[]> {
   const s = await getSettings();
   const m = monthKey();
   const serpapi = await getKey("serpapi", s);
   const serper = await getKey("serper", s);
+  const searchapi = await getKey("searchapi", s);
   const acc = serpapi ? await serpapiAccount(serpapi).catch(() => null) : null;
   const local = (id: string) => (s.usage?.[id]?.month === m ? s.usage[id].count : 0);
   const serperTotal = s.usage?.serper_total?.count ?? 0;
@@ -95,6 +120,15 @@ export async function providersUsage(): Promise<ProviderUsage[]> {
       limit: 2500,
       used: serperTotal,
       note: "Grátis: 2.500 créditos uma vez (contagem feita pelo painel)",
+    },
+    {
+      id: "searchapi",
+      label: "SearchApi",
+      configured: !!searchapi,
+      left: searchapi ? Math.max(0, 100 - (s.usage?.searchapi_total?.count ?? 0)) : null,
+      limit: 100,
+      used: s.usage?.searchapi_total?.count ?? 0,
+      note: "Grátis: 100 buscas no cadastro (contagem feita pelo painel)",
     },
     { id: "osm", label: "OpenStreetMap", configured: true, left: null, limit: null, used: null, note: "Grátis e sem chave, com menos telefones" },
   ];

@@ -84,6 +84,7 @@ export async function chat(opts: {
 }) {
   const { st, p, baseUrl, key } = await resolve();
   const model = opts.web ? st.ai.webModel || p.web || st.ai.model : opts.model || st.ai.model;
+  let used = model;
   const body: Record<string, unknown> = {
     model,
     messages: opts.messages,
@@ -130,6 +131,22 @@ export async function chat(opts: {
     delete b2.reasoning_effort;
     ({ res, j, text } = await call(b2));
   }
+  // limite por minuto ou instabilidade: cada modelo do Groq tem cota própria, então tenta uma vez com outro
+  if (!res.ok && [429, 500, 502, 503].includes(res.status) && baseUrl.includes("groq.com") && !opts.web) {
+    const alt = ["openai/gpt-oss-20b", "qwen/qwen3.8-27b"].find((m) => m !== model);
+    if (alt) {
+      const b3: Record<string, unknown> = { ...body, model: alt };
+      delete b3.reasoning_format;
+      delete b3.reasoning_effort;
+      if (/qwen3/i.test(alt)) b3.reasoning_format = "hidden";
+      if (/gpt-oss/i.test(alt)) b3.reasoning_effort = "low";
+      const r3 = await call(b3).catch(() => null);
+      if (r3?.res.ok) {
+        ({ res, j, text } = r3);
+        used = alt;
+      }
+    }
+  }
   if (!res.ok) {
     const err = (j?.error as { message?: string } | undefined)?.message || text.slice(0, 200);
     if (res.status === 401) throw new AiError("Chave da IA inválida. Confira em Ajustes.", 401);
@@ -140,7 +157,7 @@ export async function chat(opts: {
   const choice = (j?.choices as { message?: { content?: string | null; tool_calls?: ToolCall[] } }[] | undefined)?.[0];
   const msg = choice?.message ?? {};
   return {
-    model,
+    model: used,
     content: msg.content ? stripThink(msg.content) : "",
     toolCalls: msg.tool_calls ?? [],
   };

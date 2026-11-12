@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { briefing } from "@/components/Assistant";
+import { Brand, Mark } from "@/components/Mark";
 import { PainMatrix } from "@/components/PainMatrix";
 import { Count, Pains, Score, Spinner, toast, WebLabel, WhatsAppButton } from "@/components/ui";
 import { api, fmt, patchLeadCache, useLeads, useSettings } from "@/lib/client";
@@ -77,6 +78,10 @@ export default function Overview() {
 
   return (
     <>
+      <div className="m-hero only-phone">
+        <Mark size={164} />
+        <Brand size="lg" />
+      </div>
       <div className="titlerow">
         <div>
           <h1>{b.greet}</h1>

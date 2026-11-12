@@ -574,3 +574,42 @@ button, a, input, select { touch-action: manipulation; }
 @keyframes splashbar { from { transform: scaleX(0); } to { transform: none; } }
 @media (prefers-reduced-motion: reduce) { .splash-msgs span:last-child { opacity: 1; } }
 @media (max-width: 760px) { .splash .ringbox { width: 200px; height: 200px; } .splash .ringbox img { width: 150px; height: 150px; } }
+
+/* ---------- assinatura da marca ---------- */
+.brandlock { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; line-height: 1; }
+.brandlock b {
+  font-family: "Cinzel", "Trajan Pro", Georgia, serif; font-weight: 600; font-size: 30px; letter-spacing: 0.18em; margin-right: -0.18em;
+  background: linear-gradient(180deg, #f6e6b4 0%, #d6b25e 52%, #a47f2c 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: #d6b25e;
+}
+.brandlock i { font-style: normal; font-weight: 500; font-size: 9.5px; letter-spacing: 0.42em; margin-right: -0.42em; color: var(--text-2); white-space: nowrap; }
+.brandlock.sm { align-items: flex-start; gap: 4px; }
+.brandlock.sm b { font-size: 21px; letter-spacing: 0.14em; }
+.brandlock.sm i { font-size: 7px; letter-spacing: 0.34em; }
+.brandlock.lg { gap: 9px; }
+.brandlock.lg b { font-size: 52px; }
+.brandlock.lg i { font-size: 13px; }
+.rail .brandname { padding: 4px 0; }
+
+/* ---------- celular: marca herói e acabamento ---------- */
+.m-hero { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0 22px; position: relative; isolation: isolate; }
+.m-hero::before {
+  content: ""; position: absolute; z-index: -1; left: 50%; top: -8px; width: 290px; height: 290px; margin-left: -145px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, rgba(214, 178, 94, 0.22), rgba(62, 207, 142, 0.05) 46%, transparent 68%);
+}
+.m-hero img { filter: drop-shadow(0 0 34px rgba(214, 178, 94, 0.5)); animation: brainfloat 5s ease-in-out infinite; }
+@keyframes brainfloat { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-6px) scale(1.03); } }
+@media (prefers-reduced-motion: reduce) { .m-hero img { animation: none; } }
+@media (max-width: 760px) {
+  .topbar { height: 68px; padding: 0 14px; background: rgba(19, 18, 23, 0.9); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+  .topbar .brand { gap: 8px; }
+  .topbar .brand img { filter: drop-shadow(0 0 12px rgba(214, 178, 94, 0.4)); }
+  .hero.full { min-height: calc(100dvh - 176px); }
+  .m-hero + .titlerow { flex-direction: column; align-items: stretch; text-align: center; gap: 16px; }
+  .m-hero + .titlerow h1 { font-size: 24px; }
+  .m-hero + .titlerow .sub { margin-left: auto; margin-right: auto; }
+  .m-hero + .titlerow .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .m-hero + .titlerow .actions .btn { justify-content: center; height: 46px; font-size: 14px; }
+  .bottombar { background: rgba(17, 16, 21, 0.92); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+  .bottombar a { min-height: 58px; }
+  .splash .brandlock.lg b { font-size: 44px; }
+}
