@@ -17,7 +17,7 @@ Kimi/Moonshot e endpoint personalizado seguem disponíveis como principal; não 
 1. [Crie a chave Fish Audio](https://fish.audio/app/api-keys).
 2. No Fish, crie/escolha uma voz e copie o ID de referência. [Guia oficial de clonagem](https://docs.fish.audio/features/voice-cloning).
 3. Em Ajustes, salve a chave Fish e preencha **Reservas de voz → ID da voz Fish Audio**.
-4. Use a fala do assistente. ElevenLabs continua em primeiro lugar; Fish só é chamado se ela falhar. A resposta HTTP indica o provedor no cabeçalho `x-voice`.
+4. Use a fala do assistente. Fish é a voz preferida quando há chave e ID configurados; caso falhe, a fala tenta ElevenLabs e depois as demais reservas. A resposta HTTP indica o provedor no cabeçalho `x-voice`.
 
 O código chama exclusivamente `s2.1-pro-free`; nunca muda silenciosamente para um modelo Fish pago. Oferta anunciada até **30/11/2026**, sujeita a uso justo, sem garantia de latência. Quando indisponível, segue para VoiceStudio/navegador. Não usamos LMNT; a antiga chave salva não é apagada.
 
@@ -29,7 +29,7 @@ O código chama exclusivamente `s2.1-pro-free`; nunca muda silenciosamente para 
 - Em Ajustes, configure chave, URL, ID da voz e modelo. A chave corresponde à `OMNIVOICE_API_KEY` do serviço. Modelo inicial `omnivoice`; confirme o identificador disponível na sua instalação.
 - O servidor do Nova Prospec precisa alcançar a URL. **localhost na Vercel não é seu PC**. Para uso remoto, precisa de acesso HTTPS autenticado; não basta abrir a porta 3900 publicamente. Se o computador desligar, essa reserva deixa de responder.
 
-A integração usa `/v1/audio/speech` para fala e `/v1/audio/transcriptions` para transcrição. Transcrição: Groq → VoiceStudio. Fala: ElevenLabs → Fish → VoiceStudio → voz do navegador (sem clonagem).
+A integração usa `/v1/audio/speech` para fala e `/v1/audio/transcriptions` para transcrição. Transcrição: Groq → VoiceStudio. Fala: Fish → ElevenLabs → VoiceStudio → voz do navegador (sem clonagem).
 
 ## Os nove projetos enviados
 
