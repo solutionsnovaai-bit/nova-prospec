@@ -1,0 +1,27 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const ts = require('typescript');
+const fs = require('node:fs');
+const Module = require('node:module');
+const load = Module._load;
+Module._load = function(id, ...args) { if (id === 'server-only') return {}; return load.call(this, id, ...args); };
+require.extensions['.ts'] = (module, filename) => module._compile(ts.transpileModule(fs.readFileSync(filename,'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop:true } }).outputText, filename);
+let settings;
+require.cache[require.resolve('../lib/settings.ts')] = { exports: { getSettings: async () => settings, getKey: async (k,s=settings) => s.keys[k] } };
+const {chat}=require('../lib/ai.ts');
+const {generateSpeech,transcribeSpeech,studioEndpoint}=require('../lib/speech.ts');
+const {computePains}=require('../lib/score.ts');
+const {sameBusiness}=require('../lib/lead-identity.ts');
+function reset() { settings={keys:{groq:'g',openrouter:'o',gemini:'m'},ai:{provider:'groq',baseUrl:'https://api.groq.com/openai/v1',model:'openai/gpt-oss-120b'},voice:{fishVoiceId:'voice',studioUrl:'https://voice.example.com',studioVoice:'local',studioModel:'omnivoice'}}; }
+const good=()=>new Response(JSON.stringify({choices:[{message:{content:'Olá'}}]}),{status:200});
+test('AI preserves primary and advances across providers after HTTP/network failures',async()=>{reset();const calls=[];global.fetch=async(url,o)=>{calls.push([url,JSON.parse(o.body).model]);if(calls.length===1)return new Response('',{status:429});if(calls.length===2)throw new TypeError('network');return good();};const r=await chat({messages:[{role:'user',content:'Oi'}]});assert.equal(r.provider,'openrouter');assert.equal(calls[0][1],'openai/gpt-oss-120b');assert.equal(calls[2][1],'openrouter/free');});
+test('Gemini used after exhausted reserves; no paid Moonshot reserve',async()=>{reset();settings.keys.moonshot='paid';global.fetch=async url=>url.includes('googleapis')?good():new Response('',{status:402});assert.equal((await chat({messages:[]})).provider,'gemini');});
+test('disabled fallback and web request do not silently change providers',async()=>{reset();settings.ai.fallbackEnabled=false;let n=0;global.fetch=async()=>{n++;return new Response('',{status:429})};await assert.rejects(chat({messages:[]}));assert.equal(n,1);settings.ai.fallbackEnabled=true;n=0;await assert.rejects(chat({messages:[],web:true}));assert.equal(n,1);});
+test('deadline prevents late requests',async()=>{reset();let n=0;global.fetch=async()=>{n++;return good()};await assert.rejects(chat({messages:[],deadline:Date.now()-1}));assert.equal(n,0);});
+test('invalid JSON falls through to usable model',async()=>{reset();let n=0;global.fetch=async()=>++n===1?good():new Response(JSON.stringify({choices:[{message:{content:'{"ok":true}'}}]}));assert.equal(JSON.parse((await chat({messages:[],json:true})).content).ok,true);});
+test('voice ElevenLabs failure falls to free Fish, no LMNT call',async()=>{reset();settings.keys={elevenlabs:'e',fish:'f'};const calls=[];global.fetch=async(url,o)=>{calls.push(url);if(url.includes('elevenlabs'))return new Response('',{status:429});assert.equal(o.headers.model,'s2.1-pro-free');return new Response(new Uint8Array([1,2]),{headers:{'content-type':'audio/mpeg'}})};assert.equal((await generateSpeech('Olá')).via,'fish');assert.equal(calls.length,2);});
+test('voice returns null for browser fallback and ignores missing optional credentials',async()=>{reset();settings.keys={};global.fetch=async()=>assert.fail('should not call');assert.equal(await generateSpeech('Olá'),null);});
+test('transcription fails over Groq to VoiceStudio',async()=>{reset();settings.keys={groq:'g',voicestudio:'v'};global.fetch=async(url)=>url.includes('groq')?new Response('',{status:429}):new Response('{"text":"Olá"}');assert.equal((await transcribeSpeech(new Blob(['audio']),'a.webm')).provider,'voicestudio');});
+test('VoiceStudio rejects insecure remote and credentials in URL',()=>{assert.throws(()=>studioEndpoint('http://example.com','health'));assert.throws(()=>studioEndpoint('https://u:p@example.com','health'));assert.equal(studioEndpoint('http://localhost:3900','health'),'http://localhost:3900/health');});
+test('missing data does not imply no ads or weak Google presence',()=>{const p=computePains({name:'Loja',websiteKind:'nenhum'});assert.ok(!p.includes('sem_trafego'));assert.ok(!p.includes('google_fraco'));});
+test('dedup preserves distinct branches sharing phone',()=>{const a={id:'serper:1',name:'Loja',phoneE164:'5511999999999',address:'Rua Um, 10'};assert.equal(sameBusiness(a,{...a,id:'serpapi:2'}),true);assert.equal(sameBusiness(a,{...a,id:'serpapi:2',address:'Rua Dois, 20'}),false);});

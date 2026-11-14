@@ -3,6 +3,7 @@ import { getKey, getSettings, type Settings } from "./settings";
 import type { AiConfig, KeyName } from "./types";
 
 export const PROVIDERS: Record<AiConfig["provider"], { label: string; baseUrl: string; key: KeyName; suggested: string[]; web?: string; signup: string }> = {
+  gemini: { label: "Gemini (Free Tier)", baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai", key: "gemini", suggested: ["gemini-3.5-flash-lite"], signup: "https://aistudio.google.com/apikey" },
   groq: {
     label: "Groq (grátis)",
     baseUrl: "https://api.groq.com/openai/v1",
@@ -15,7 +16,7 @@ export const PROVIDERS: Record<AiConfig["provider"], { label: string; baseUrl: s
     label: "OpenRouter (modelos :free)",
     baseUrl: "https://openrouter.ai/api/v1",
     key: "openrouter",
-    suggested: ["moonshotai/kimi-k2:free", "qwen/qwen3-235b-a22b:free"],
+    suggested: ["openrouter/free"],
     signup: "https://openrouter.ai/settings/keys",
   },
   moonshot: {
@@ -73,7 +74,7 @@ function stripThink(s: string) {
   return s.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
 }
 
-export async function chat(opts: {
+type ChatOptions = {
   messages: ChatMessage[];
   tools?: ToolDef[];
   json?: boolean;
@@ -81,8 +82,11 @@ export async function chat(opts: {
   web?: boolean; // usar o modelo com busca na web
   temperature?: number;
   maxTokens?: number;
-}) {
-  const { st, p, baseUrl, key } = await resolve();
+  deadline?: number;
+};
+
+async function chatOnce(opts: ChatOptions, settings: Settings) {
+  const { st, p, baseUrl, key } = await resolve(settings);
   const model = opts.web ? st.ai.webModel || p.web || st.ai.model : opts.model || st.ai.model;
   let used = model;
   const body: Record<string, unknown> = {
@@ -101,13 +105,14 @@ export async function chat(opts: {
 
   const call = async (b: Record<string, unknown>) => {
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 55000);
+    const t = setTimeout(() => ctrl.abort(), Math.max(1, Math.min(12000, (opts.deadline ?? Date.now() + 12000) - Date.now())));
     try {
       const res = await fetch(`${baseUrl}/chat/completions`, {
         method: "POST",
         headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", "HTTP-Referer": "https://nova-prospec.app", "X-Title": "Nova Prospec" },
         body: JSON.stringify(b),
         signal: ctrl.signal,
+        redirect: "error",
       });
       const text = await res.text();
       let j: Record<string, unknown> | null = null;
@@ -131,36 +136,55 @@ export async function chat(opts: {
     delete b2.reasoning_effort;
     ({ res, j, text } = await call(b2));
   }
-  // limite por minuto ou instabilidade: cada modelo do Groq tem cota própria, então tenta uma vez com outro
-  if (!res.ok && [429, 500, 502, 503].includes(res.status) && baseUrl.includes("groq.com") && !opts.web) {
-    const alt = ["openai/gpt-oss-20b", "qwen/qwen3.8-27b"].find((m) => m !== model);
-    if (alt) {
-      const b3: Record<string, unknown> = { ...body, model: alt };
-      delete b3.reasoning_format;
-      delete b3.reasoning_effort;
-      if (/qwen3/i.test(alt)) b3.reasoning_format = "hidden";
-      if (/gpt-oss/i.test(alt)) b3.reasoning_effort = "low";
-      const r3 = await call(b3).catch(() => null);
-      if (r3?.res.ok) {
-        ({ res, j, text } = r3);
-        used = alt;
-      }
-    }
-  }
   if (!res.ok) {
-    const err = (j?.error as { message?: string } | undefined)?.message || text.slice(0, 200);
+    const err = "Resposta inválida do provedor";
     if (res.status === 401) throw new AiError("Chave da IA inválida. Confira em Ajustes.", 401);
     if (res.status === 429) throw new AiError("A IA grátis bateu o limite por minuto. Espera uns segundos e tenta de novo.", 429);
-    if (res.status === 404 || /model/i.test(err)) throw new AiError(`Modelo "${model}" indisponível: ${err}`, 400);
+    if (res.status === 404 || /model/i.test(err)) throw new AiError(`Modelo "${model}" indisponível.`, 404);
     throw new AiError(`IA respondeu ${res.status}: ${err}`, res.status);
   }
   const choice = (j?.choices as { message?: { content?: string | null; tool_calls?: ToolCall[] } }[] | undefined)?.[0];
   const msg = choice?.message ?? {};
+  if (!msg.content && !msg.tool_calls?.length) throw new AiError("A IA retornou resposta vazia.", 502);
+  if (opts.json && (!msg.content || !parseJsonLoose(msg.content))) throw new AiError("A IA não retornou JSON válido.", 502);
   return {
+    provider: st.ai.provider,
     model: used,
     content: msg.content ? stripThink(msg.content) : "",
     toolCalls: msg.tool_calls ?? [],
   };
+}
+
+/** Mantém a escolha principal; reservas só usam provedores com chave configurada. */
+export async function chat(opts: ChatOptions) {
+  const settings = await getSettings();
+  const deadline = Math.min(opts.deadline ?? Infinity, Date.now() + 45000);
+  const targets: AiConfig[] = [settings.ai];
+  if (settings.ai.fallbackEnabled !== false && !opts.web) {
+    for (const [provider, model] of [
+      ["groq", "openai/gpt-oss-20b"],
+      ["openrouter", "openrouter/free"],
+      ["gemini", "gemini-3.5-flash-lite"],
+    ] as const) {
+      if (await getKey(provider, settings)) targets.push({ provider, model, baseUrl: PROVIDERS[provider].baseUrl });
+    }
+  }
+  let last: unknown = new AiError("Nenhuma IA disponível. Confira as chaves em Ajustes.", 503);
+  const seen = new Set<string>();
+  for (const target of targets) {
+    const model = target === settings.ai ? opts.model ?? target.model : target.model;
+    const id = JSON.stringify([target.provider, target.baseUrl, model]);
+    if (seen.has(id) || Date.now() >= deadline) continue;
+    seen.add(id);
+    try {
+      return await chatOnce({ ...opts, model, deadline }, { ...settings, ai: target });
+    } catch (e) {
+      last = e;
+      if (e instanceof AiError && ![400,401,402,403,404,408,422,429,500,502,503,504].includes(e.status)) throw e;
+    }
+  }
+  if (last instanceof AiError) throw last;
+  throw new AiError("As IAs disponíveis não responderam a tempo. Tente novamente.", 503);
 }
 
 export function parseJsonLoose<T>(s: string): T | null {

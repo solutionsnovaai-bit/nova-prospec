@@ -49,7 +49,7 @@ export async function runSearch(source: SearchSource, input: SearchInput): Promi
       lastErr = e;
       // no modo automático, cota zerada ou chave ruim passa para a próxima fonte
       if (source !== "auto") throw e;
-      if (e instanceof SourceError && ![401, 402, 429].includes(e.status)) throw e;
+      if (e instanceof SourceError && ![401, 402, 403, 408, 429, 500, 502, 503, 504].includes(e.status)) throw e;
     }
   }
   throw lastErr ?? new SourceError("Nenhuma fonte disponível.");
