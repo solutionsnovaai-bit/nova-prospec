@@ -3,7 +3,7 @@ import { Mic, Send, Square, Volume2, VolumeX } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, fmt, useLeads, useSettings, useUsage } from "@/lib/client";
-import { speakNatural, stopSpeaking, unlockAudio, useVoice } from "@/lib/voice";
+import { speakNatural, stopSpeaking, unlockAudio, useVoice, type VoiceSource } from "@/lib/voice";
 import type { Lead } from "@/lib/types";
 import { Orb, type OrbState } from "./Orb";
 import { Spinner, toast } from "./ui";
@@ -127,6 +127,7 @@ export function Assistant({ full }: { full?: boolean }) {
   const [text, setText] = useState("");
   const [speaking, setSpeaking] = useState(false);
   const [voiceOn, setVoiceOn] = useState(true);
+  const [voiceSource, setVoiceSource] = useState<VoiceSource>("fish");
   const [chatOpen, setChatOpen] = useState(false);
   const end = useRef<HTMLDivElement>(null);
   const [vp, setVp] = useState({ w: 1280, h: 800 });
@@ -140,6 +141,8 @@ export function Assistant({ full }: { full?: boolean }) {
   useEffect(() => {
     try {
       setVoiceOn(localStorage.getItem("np_voice") !== "off");
+      const stored = localStorage.getItem("np_voice_source");
+      if (stored === "fish" || stored === "elevenlabs" || stored === "browser") setVoiceSource(stored);
     } catch {}
     return () => stopSpeaking();
   }, []);
@@ -147,8 +150,17 @@ export function Assistant({ full }: { full?: boolean }) {
     if (full && chatOpen) end.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [msgs, busy, full, chatOpen]);
 
-  const natural = !!(settings?.keys.fish?.set || settings?.keys.elevenlabs?.set || (settings?.keys.voicestudio?.set && settings?.voice.studioUrl && settings?.voice.studioVoice));
-  const say = (t: string) => voiceOn && speakNatural(t, natural, { onStart: () => setSpeaking(true), onEnd: () => setSpeaking(false) });
+  const studioReady = !!(settings?.keys.voicestudio?.set && settings?.voice.studioUrl && settings?.voice.studioVoice);
+  const natural = voiceSource === "fish"
+    ? !!(settings?.keys.fish?.set || settings?.keys.elevenlabs?.set || studioReady)
+    : voiceSource === "elevenlabs" ? !!(settings?.keys.elevenlabs?.set || studioReady) : false;
+  const say = (t: string) => voiceOn && speakNatural(t, natural, { onStart: () => setSpeaking(true), onEnd: () => setSpeaking(false) }, voiceSource);
+  const selectVoice = (next: VoiceSource) => {
+    stopSpeaking();
+    setSpeaking(false);
+    setVoiceSource(next);
+    try { localStorage.setItem("np_voice_source", next); } catch {}
+  };
   const ask = async (t: string, spoken = false) => {
     unlockAudio(); // dentro do toque: libera o som no iPhone
     setText("");
@@ -205,6 +217,18 @@ export function Assistant({ full }: { full?: boolean }) {
             </button>
           </span>
         </div>
+        {full && (
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+            <label style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+              <span className="muted">Voz da Nova</span>
+              <select className="select" aria-label="Selecionar voz da Nova" value={voiceSource} onChange={(e) => selectVoice(e.target.value as VoiceSource)} style={{ fontSize: 12, maxWidth: 205 }}>
+                <option value="fish">Fish Audio (principal)</option>
+                <option value="elevenlabs">Natural (ElevenLabs)</option>
+                <option value="browser">Voz do navegador</option>
+              </select>
+            </label>
+          </div>
+        )}
 
         {full ? (
           <aside className={`chat drawer ${chatOpen ? "open" : ""}`} aria-hidden={!chatOpen}>
@@ -269,7 +293,7 @@ export function Assistant({ full }: { full?: boolean }) {
           <span><i className={`led ${search.length ? "" : "off"}`} />Busca <b className="num">{search.length ? fmt.format(searchLeft) : "sem chave"}</b></span>
           <span><i className={`led ${aiOk ? "" : "off"}`} />IA <b className="mono">{aiOk ? (settings?.ai.model.split("/").pop() ?? "") : "sem chave"}</b></span>
           <span><i className={`led ${settings?.storage.persistent ? "" : "off"}`} />Banco <b>{settings?.storage.kind ?? "—"}</b></span>
-          <span><i className={`led ${natural ? "" : "off"}`} />Voz <b>{natural ? "natural" : "do navegador"}</b></span>
+          <span><i className={`led ${natural ? "" : "off"}`} />Voz <b>{natural ? (voiceSource === "fish" ? "Fish preferida" : "natural preferida") : "do navegador"}</b></span>
           <span><i className="led" />Base <b className="num">{fmt.format(leads?.length ?? 0)}</b></span>
         </div>
       </div>
