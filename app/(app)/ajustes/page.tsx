@@ -10,8 +10,8 @@ const KEYS: { id: KeyName; label: string; hint: string; url: string }[] = [
   { id: "serper", label: "Serper (Google Maps e busca)", hint: "2.500 créditos grátis, uma vez", url: "https://serper.dev/api-keys" },
   { id: "tavily", label: "Tavily (pesquisa online da Nova)", hint: "1.000 por mês, grátis, renova", url: "https://app.tavily.com" },
   { id: "searchapi", label: "SearchApi (Google Maps, reserva)", hint: "100 buscas grátis", url: "https://www.searchapi.io" },
-  { id: "elevenlabs", label: "ElevenLabs (voz natural da Nova)", hint: "grátis, 10 mil créditos por mês", url: "https://elevenlabs.io/app/settings/api-keys" },
-  { id: "fish", label: "Fish Audio (voz reserva)", hint: "API s2.1-pro-free; oferta até 30/11/2026. preencha o ID da voz abaixo", url: "https://fish.audio/app/api-keys" },
+  { id: "elevenlabs", label: "ElevenLabs (voz reserva)", hint: "grátis, 10 mil créditos por mês", url: "https://elevenlabs.io/app/settings/api-keys" },
+  { id: "fish", label: "Fish Audio (voz preferida)", hint: "API s2.1-pro-free; oferta até 30/11/2026. preencha o ID da voz abaixo", url: "https://fish.audio/app/api-keys" },
   { id: "voicestudio", label: "VoiceStudio (voz e transcrição local)", hint: "preencha a URL e a voz abaixo", url: "https://github.com/debpalash/VoiceStudio" },
   { id: "gemini", label: "Gemini (IA reserva)", hint: "use projeto Free Tier para evitar cobrança", url: "https://aistudio.google.com/apikey" },
   { id: "openrouter", label: "OpenRouter (opcional)", hint: "modelos :free", url: "https://openrouter.ai/settings/keys" },
@@ -151,7 +151,7 @@ export default function AjustesPage() {
           <section className="panel">
             <div className="panel-h"><h2>Reservas de voz</h2></div>
             <div className="panel-b" style={{ display: "grid", gap: 12 }}>
-              <p>ElevenLabs → Fish Audio → VoiceStudio → navegador. A transcrição usa Groq → VoiceStudio. Só são usados serviços configurados.</p>
+              <p>Fish Audio → ElevenLabs → VoiceStudio → navegador. A transcrição usa Groq → VoiceStudio. Só são usados serviços configurados.</p>
               {voice && ([['fishVoiceId', 'ID da voz Fish Audio'], ['studioUrl', 'URL do VoiceStudio (HTTPS; acessível pelo servidor)'], ['studioVoice', 'ID da voz VoiceStudio'], ['studioModel', 'Modelo VoiceStudio']] as const).map(([id, label]) => <label className="field" key={id}><span>{label}</span><input className="input" value={voice[id]} onChange={e => setVoice({ ...voice, [id]: e.target.value })} /></label>)}
               <small>Fish usa apenas s2.1-pro-free, oferta anunciada até 30/11/2026. Se acabar, passa à próxima reserva. VoiceStudio precisa estar ligado e acessível; localhost na Vercel não é o seu computador.</small>
               <button className="btn" disabled={!!busy} onClick={testFish}>Testar apenas Fish Audio</button>
