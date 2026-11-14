@@ -52,7 +52,7 @@ export function Shell({ children }: { children: ReactNode }) {
     <div className="app" data-nav={open ? "open" : "closed"}>
       <nav className="rail" aria-label="Navegação">
         <Link href="/" className="mark" aria-label="Nova AI Solutions">
-          <Mark size={open ? 196 : 78} />
+          <Mark size={open ? 220 : 86} />
           <span className="brandname"><Brand /></span>
         </Link>
         {NAV.map((n) => (

@@ -55,6 +55,10 @@ export async function PATCH(req: Request) {
       const changedProvider = provider !== cur.provider;
       patch.ai = {
         provider,
+        taskProviders: Object.fromEntries((["analysis", "chat"] as const).flatMap(task => {
+          const id = b.ai?.taskProviders?.[task] ?? cur.taskProviders?.[task];
+          return id && id in PROVIDERS ? [[task, id]] : [];
+        })),
         fallbackEnabled: typeof b.ai.fallbackEnabled === "boolean" ? b.ai.fallbackEnabled : cur.fallbackEnabled ?? true,
         baseUrl: (b.ai.baseUrl ?? (changedProvider ? PROVIDERS[provider].baseUrl : cur.baseUrl)).trim(),
         model: (b.ai.model ?? (changedProvider ? PROVIDERS[provider].suggested[0] ?? "" : cur.model)).trim(),

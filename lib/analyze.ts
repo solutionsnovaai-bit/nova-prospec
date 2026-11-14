@@ -87,6 +87,7 @@ export async function analyzeLead(l: Lead, opts: { web?: boolean } = {}): Promis
   if (opts.web) {
     try {
       const r = await chat({
+    task: "analysis",
         web: true,
         messages: [
           {
@@ -104,6 +105,7 @@ export async function analyzeLead(l: Lead, opts: { web?: boolean } = {}): Promis
   }
 
   const r = await chat({
+    task: "analysis",
     json: true,
     messages: [
       { role: "system", content: SYSTEM },

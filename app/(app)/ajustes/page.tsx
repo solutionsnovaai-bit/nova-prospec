@@ -50,6 +50,26 @@ export default function AjustesPage() {
     }
   };
 
+  const testFish = async () => {
+    setBusy("test-fish");
+    try {
+      const res = await fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ testProvider: "fish" }) });
+      if (!res.ok) throw new Error("Fish não respondeu. Confira a chave e o ID da voz salvos; ElevenLabs não foi usada.");
+      const url = URL.createObjectURL(await res.blob());
+      const player = new Audio(url);
+      player.onended = () => URL.revokeObjectURL(url);
+      player.onerror = () => URL.revokeObjectURL(url);
+      try { await player.play(); } catch { URL.revokeObjectURL(url); throw new Error("Áudio gerado, mas o navegador bloqueou a reprodução. Tente novamente."); }
+      toast("Fish respondeu. ElevenLabs não foi alterada.");
+    } catch (e) { toast(e instanceof Error ? e.message : "Falha no teste", true); }
+    finally { setBusy(null); }
+  };
+  const checkKeys = async () => {
+    setBusy("check-keys");
+    try { const r = await api<{ results: { provider: string; status: string }[] }>("/api/ai/check", { method: "POST" }); toast(r.results.map(x => `${x.provider}: ${x.status}`).join(" · ")); }
+    catch { toast("Não foi possível verificar as chaves.", true); }
+    finally { setBusy(null); }
+  };
   const loadModels = async () => {
     setBusy("models");
     try {
@@ -115,6 +135,7 @@ export default function AjustesPage() {
                   </label>
                 );
               })}
+              <button className="btn" disabled={!!busy} onClick={checkKeys}>Verificar chaves de IA salvas</button>
               <div>
                 <button className="btn primary" disabled={busy === "keys" || !Object.values(keys).some(Boolean)} onClick={() => save("keys", { keys }, "Chaves salvas").then(() => { setKeys({}); reloadUsage(); })}>
                   {busy === "keys" && <Spinner />} Salvar chaves
@@ -129,6 +150,8 @@ export default function AjustesPage() {
               <p>ElevenLabs → Fish Audio → VoiceStudio → navegador. A transcrição usa Groq → VoiceStudio. Só são usados serviços configurados.</p>
               {voice && ([['fishVoiceId', 'ID da voz Fish Audio'], ['studioUrl', 'URL do VoiceStudio (HTTPS; acessível pelo servidor)'], ['studioVoice', 'ID da voz VoiceStudio'], ['studioModel', 'Modelo VoiceStudio']] as const).map(([id, label]) => <label className="field" key={id}><span>{label}</span><input className="input" value={voice[id]} onChange={e => setVoice({ ...voice, [id]: e.target.value })} /></label>)}
               <small>Fish usa apenas s2.1-pro-free, oferta anunciada até 30/11/2026. Se acabar, passa à próxima reserva. VoiceStudio precisa estar ligado e acessível; localhost na Vercel não é o seu computador.</small>
+              <button className="btn" disabled={!!busy} onClick={testFish}>Testar apenas Fish Audio</button>
+              <small>Salve a chave e o ID da voz antes de testar. Este botão não chama ElevenLabs.</small>
               <button className="btn" disabled={!voice || busy === "voice"} onClick={() => save("voice", { voice }, "Voz salva")}>Salvar voz</button>
             </div>
           </section>
@@ -169,6 +192,7 @@ export default function AjustesPage() {
               {ai.provider === "custom" && (
                 <label className="field"><span>Base URL</span><input className="input mono" value={ai.baseUrl} onChange={(e) => setAi({ ...ai, baseUrl: e.target.value })} placeholder="https://…/v1" /></label>
               )}
+              {([['analysis', 'IA para analisar leads'], ['chat', 'IA para conversar e usar ferramentas']] as const).map(([task, label]) => <label className="field" key={task}><span>{label}</span><select className="select" value={ai.taskProviders?.[task] ?? ai.provider} onChange={e => setAi({ ...ai, taskProviders: { ...ai.taskProviders, [task]: e.target.value as PublicSettings['ai']['provider'] } })}>{[...new Set([ai.provider, 'groq', 'openrouter', 'gemini'])].map(id => <option key={id} value={id}>{providers?.[id]?.label ?? id}</option>)}</select><small>Usa este provedor primeiro nesta tarefa. Sem chave, mantém o principal. A qualidade deve ser comparada com seus casos reais.</small></label>)}
               <label className="field"><span><input type="checkbox" checked={ai.fallbackEnabled !== false} onChange={(e) => setAi({ ...ai, fallbackEnabled: e.target.checked })} /> Trocar automaticamente de IA quando falhar</span><small>Preserva o modelo principal. Reservas com chave: Groq → OpenRouter gratuito → Gemini Flash-Lite. Gemini/Groq devem estar em contas gratuitas; o painel não consulta seu faturamento. Kimi e endpoint personalizado continuam disponíveis como principal.</small></label>
               <div><button className="btn primary" disabled={busy === "ai"} onClick={() => save("ai", { ai }, "IA salva")}>{busy === "ai" && <Spinner />} Salvar IA</button></div>
             </div>

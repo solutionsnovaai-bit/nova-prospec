@@ -83,6 +83,7 @@ type ChatOptions = {
   temperature?: number;
   maxTokens?: number;
   deadline?: number;
+  task?: "analysis" | "chat";
 };
 
 async function chatOnce(opts: ChatOptions, settings: Settings) {
@@ -159,7 +160,12 @@ async function chatOnce(opts: ChatOptions, settings: Settings) {
 export async function chat(opts: ChatOptions) {
   const settings = await getSettings();
   const deadline = Math.min(opts.deadline ?? Infinity, Date.now() + 45000);
-  const targets: AiConfig[] = [settings.ai];
+  const selected = !opts.web && opts.task && settings.ai.taskProviders?.[opts.task];
+  const preferred = selected && selected !== settings.ai.provider && selected !== "custom" && selected !== "moonshot" && await getKey(PROVIDERS[selected].key, settings)
+    ? { ...settings.ai, provider: selected, baseUrl: PROVIDERS[selected].baseUrl, model: PROVIDERS[selected].suggested[0] }
+    : settings.ai;
+  const targets: AiConfig[] = [preferred];
+  if (preferred !== settings.ai && settings.ai.fallbackEnabled !== false) targets.push(settings.ai);
   if (settings.ai.fallbackEnabled !== false && !opts.web) {
     for (const [provider, model] of [
       ["groq", "openai/gpt-oss-20b"],
@@ -172,7 +178,7 @@ export async function chat(opts: ChatOptions) {
   let last: unknown = new AiError("Nenhuma IA disponível. Confira as chaves em Ajustes.", 503);
   const seen = new Set<string>();
   for (const target of targets) {
-    const model = target === settings.ai ? opts.model ?? target.model : target.model;
+    const model = target === preferred ? opts.model ?? target.model : target.model;
     const id = JSON.stringify([target.provider, target.baseUrl, model]);
     if (seen.has(id) || Date.now() >= deadline) continue;
     seen.add(id);

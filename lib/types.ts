@@ -187,6 +187,7 @@ export interface ProviderUsage {
 export interface AiConfig {
   provider: "groq" | "openrouter" | "moonshot" | "custom" | "gemini";
   fallbackEnabled?: boolean;
+  taskProviders?: Partial<Record<"analysis" | "chat", AiConfig["provider"]>>;
   baseUrl: string;
   model: string;
   webModel?: string; // modelo com busca na web (groq/compound-mini)

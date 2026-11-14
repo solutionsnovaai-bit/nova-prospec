@@ -17,11 +17,11 @@ async function sound(url: string, init: RequestInit, signal: AbortSignal) {
   return { data, type: type === "application/octet-stream" ? "audio/mpeg" : type };
 }
 
-export async function generateSpeech(text: string) {
+export async function generateSpeech(text: string, only?: "fish") {
   const s = await getSettings();
   const voice = s.voice;
   const eleven = await getKey("elevenlabs", s);
-  if (eleven) {
+  if (eleven && !only) {
     const signal = AbortSignal.timeout(10000);
     const call = (id: string, model: string) => sound(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(id)}?output_format=mp3_44100_128`, {
       method: "POST", headers: { "xi-api-key": eleven, "Content-Type": "application/json" },
@@ -53,7 +53,7 @@ export async function generateSpeech(text: string) {
     } catch { /* próxima reserva */ }
   }
   const key = await getKey("voicestudio", s);
-  if (key && voice.studioUrl && voice.studioVoice) {
+  if (!only && key && voice.studioUrl && voice.studioVoice) {
     try {
       const audio = await sound(studioEndpoint(voice.studioUrl, "v1/audio/speech"), { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body: JSON.stringify({ input: text, voice: voice.studioVoice, model: voice.studioModel, response_format: "wav" }) }, AbortSignal.timeout(7000));
       return { ...audio, via: "voicestudio" };

@@ -237,7 +237,7 @@ export async function copilot(history: { role: "user" | "assistant"; content: st
   let searches = 0;
   let calls = 0;
   for (let i = 0; i < 6 && Date.now() < deadline - 2000; i++) {
-    const r = await chat({ messages, tools: TOOLS, temperature: 0.7, maxTokens: 2400, deadline });
+    const r = await chat({ task: "chat", messages, tools: TOOLS, temperature: 0.7, maxTokens: 2400, deadline });
     if (!r.toolCalls.length) {
       return { reply: r.content || "Pronto.", steps, leadIds: [...touched], model: r.model };
     }
