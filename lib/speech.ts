@@ -17,14 +17,14 @@ async function sound(url: string, init: RequestInit, signal: AbortSignal) {
   return { data, type: type === "application/octet-stream" ? "audio/mpeg" : type };
 }
 
-export async function generateSpeech(text: string, only?: "fish") {
+export async function generateSpeech(text: string, only?: "fish", preferred: "fish" | "elevenlabs" = "fish") {
   const s = await getSettings();
   const voice = s.voice;
   const fish = await getKey("fish", s);
   if (only && !fish) throw Object.assign(new Error("Falta salvar a chave Fish Audio em Ajustes → Chaves."), { status: 400 });
   if (only && !voice.fishVoiceId) throw Object.assign(new Error("Falta o ID da voz Fish. Escolha uma voz no Fish Audio e salve seu ID em Reservas de voz; a chave API sozinha não basta."), { status: 400 });
   // Never silently switch the free promotional model to a billed model.
-  if (fish && voice.fishVoiceId) {
+  if (preferred !== "elevenlabs" && fish && voice.fishVoiceId) {
     try {
       const audio = await sound("https://api.fish.audio/v1/tts", { method: "POST", headers: { Authorization: `Bearer ${fish}`, "Content-Type": "application/json", model: "s2.1-pro-free" }, body: JSON.stringify({ text, reference_id: voice.fishVoiceId, format: "mp3" }) }, AbortSignal.timeout(only ? 22000 : 7000));
       return { ...audio, via: "fish" };
