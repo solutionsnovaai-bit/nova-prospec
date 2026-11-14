@@ -20,6 +20,28 @@ async function sound(url: string, init: RequestInit, signal: AbortSignal) {
 export async function generateSpeech(text: string, only?: "fish") {
   const s = await getSettings();
   const voice = s.voice;
+  const fish = await getKey("fish", s);
+  if (only && !fish) throw Object.assign(new Error("Falta salvar a chave Fish Audio em Ajustes → Chaves."), { status: 400 });
+  if (only && !voice.fishVoiceId) throw Object.assign(new Error("Falta o ID da voz Fish. Escolha uma voz no Fish Audio e salve seu ID em Reservas de voz; a chave API sozinha não basta."), { status: 400 });
+  // Never silently switch the free promotional model to a billed model.
+  if (fish && voice.fishVoiceId) {
+    try {
+      const audio = await sound("https://api.fish.audio/v1/tts", { method: "POST", headers: { Authorization: `Bearer ${fish}`, "Content-Type": "application/json", model: "s2.1-pro-free" }, body: JSON.stringify({ text, reference_id: voice.fishVoiceId, format: "mp3" }) }, AbortSignal.timeout(only ? 22000 : 7000));
+      return { ...audio, via: "fish" };
+    } catch (e) {
+      if (only) {
+        const status = (e as { status?: number }).status;
+        const message = status === 401 ? "Fish recusou a chave API (401). Gere outra chave e salve no campo Fish Audio."
+          : status === 403 ? "Fish negou acesso (403). Confira a permissão da voz e do modelo na sua conta."
+          : status === 402 ? "Fish informou restrição de crédito/acesso (402). Nenhum modelo pago foi acionado."
+          : status === 429 ? "Fish atingiu o limite temporário (429). Aguarde e tente novamente."
+          : [400,404,422].includes(status ?? 0) ? `Fish recusou voz/modelo (HTTP ${status}). Use o ID da voz, não o nome nem o link completo.`
+          : (e as Error).name === "TimeoutError" || (e as Error).name === "AbortError" ? "Fish demorou mais de 22 segundos. Tente novamente; ElevenLabs não foi usada."
+          : `Fish indisponível${status ? ` (HTTP ${status})` : " ou retornou áudio inválido"}. Tente novamente.`;
+        throw Object.assign(new Error(message), { status: status && status >= 400 && status < 600 ? status : 503 });
+      }
+    }
+  }
   const eleven = await getKey("elevenlabs", s);
   if (eleven && !only) {
     const signal = AbortSignal.timeout(10000);
@@ -41,28 +63,6 @@ export async function generateSpeech(text: string, only?: "fish") {
             if (first) return { ...await call(first.voice_id, "eleven_multilingual_v2"), via: "elevenlabs" };
           }
         } catch { /* próxima reserva, usando o mesmo limite de tempo */ }
-      }
-    }
-  }
-  const fish = await getKey("fish", s);
-  if (only && !fish) throw Object.assign(new Error("Falta salvar a chave Fish Audio em Ajustes → Chaves."), { status: 400 });
-  if (only && !voice.fishVoiceId) throw Object.assign(new Error("Falta o ID da voz Fish. Escolha uma voz no Fish Audio e salve seu ID em Reservas de voz; a chave API sozinha não basta."), { status: 400 });
-  // Never silently switch the free promotional model to a billed model.
-  if (fish && voice.fishVoiceId) {
-    try {
-      const audio = await sound("https://api.fish.audio/v1/tts", { method: "POST", headers: { Authorization: `Bearer ${fish}`, "Content-Type": "application/json", model: "s2.1-pro-free" }, body: JSON.stringify({ text, reference_id: voice.fishVoiceId, format: "mp3" }) }, AbortSignal.timeout(only ? 22000 : 7000));
-      return { ...audio, via: "fish" };
-    } catch (e) {
-      if (only) {
-        const status = (e as { status?: number }).status;
-        const message = status === 401 ? "Fish recusou a chave API (401). Gere outra chave e salve no campo Fish Audio."
-          : status === 403 ? "Fish negou acesso (403). Confira a permissão da voz e do modelo na sua conta."
-          : status === 402 ? "Fish informou restrição de crédito/acesso (402). Nenhum modelo pago foi acionado."
-          : status === 429 ? "Fish atingiu o limite temporário (429). Aguarde e tente novamente."
-          : [400,404,422].includes(status ?? 0) ? `Fish recusou voz/modelo (HTTP ${status}). Use o ID da voz, não o nome nem o link completo.`
-          : (e as Error).name === "TimeoutError" || (e as Error).name === "AbortError" ? "Fish demorou mais de 22 segundos. Tente novamente; ElevenLabs não foi usada."
-          : `Fish indisponível${status ? ` (HTTP ${status})` : " ou retornou áudio inválido"}. Tente novamente.`;
-        throw Object.assign(new Error(message), { status: status && status >= 400 && status < 600 ? status : 503 });
       }
     }
   }
