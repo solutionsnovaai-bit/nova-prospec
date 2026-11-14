@@ -1,3 +1,4 @@
+import { studioEndpoint } from "@/lib/speech";
 import { guard } from "@/lib/auth";
 import { PROVIDERS } from "@/lib/ai";
 import { body, fail, ok } from "@/lib/http";
@@ -24,6 +25,7 @@ export async function PATCH(req: Request) {
   if (g) return g;
   try {
     const b = await body<{
+      voice?: Partial<Settings["voice"]>;
       keys?: Partial<Record<KeyName, string>>;
       ai?: Partial<AiConfig>;
       messageBase?: string;
@@ -34,6 +36,14 @@ export async function PATCH(req: Request) {
       ownerName?: string;
     }>(req);
     const patch: Partial<Settings> = {};
+    if (b.voice) {
+      const current = (await publicSettings()).voice;
+      patch.voice = { ...current };
+      for (const field of ["fishVoiceId", "studioUrl", "studioVoice", "studioModel"] as const) {
+        if (typeof b.voice[field] === "string") patch.voice[field] = b.voice[field]!.trim().slice(0, 500);
+      }
+      if (patch.voice.studioUrl) studioEndpoint(patch.voice.studioUrl, "health");
+    }
     if (b.keys) {
       const keys: Partial<Record<KeyName, string>> = {};
       for (const [k, v] of Object.entries(b.keys)) if (typeof v === "string") keys[k as KeyName] = v.trim();
@@ -45,6 +55,7 @@ export async function PATCH(req: Request) {
       const changedProvider = provider !== cur.provider;
       patch.ai = {
         provider,
+        fallbackEnabled: typeof b.ai.fallbackEnabled === "boolean" ? b.ai.fallbackEnabled : cur.fallbackEnabled ?? true,
         baseUrl: (b.ai.baseUrl ?? (changedProvider ? PROVIDERS[provider].baseUrl : cur.baseUrl)).trim(),
         model: (b.ai.model ?? (changedProvider ? PROVIDERS[provider].suggested[0] ?? "" : cur.model)).trim(),
         webModel: (b.ai.webModel ?? (changedProvider ? PROVIDERS[provider].web ?? "" : cur.webModel ?? "")).trim(),

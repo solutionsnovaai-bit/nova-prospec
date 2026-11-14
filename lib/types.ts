@@ -185,7 +185,8 @@ export interface ProviderUsage {
 }
 
 export interface AiConfig {
-  provider: "groq" | "openrouter" | "moonshot" | "custom";
+  provider: "groq" | "openrouter" | "moonshot" | "custom" | "gemini";
+  fallbackEnabled?: boolean;
   baseUrl: string;
   model: string;
   webModel?: string; // modelo com busca na web (groq/compound-mini)
@@ -198,7 +199,10 @@ export interface Offer {
   quando: string; // quando oferecer
 }
 
+export interface VoiceConfig { fishVoiceId: string; studioUrl: string; studioVoice: string; studioModel: string; }
+
 export interface PublicSettings {
+  voice: VoiceConfig;
   keys: Record<KeyName, { set: boolean; hint?: string; fromEnv?: boolean }>;
   ai: AiConfig;
   messageBase: string;
@@ -210,4 +214,4 @@ export interface PublicSettings {
   ownerName: string;
 }
 
-export type KeyName = "serpapi" | "serper" | "groq" | "openrouter" | "moonshot" | "custom" | "elevenlabs" | "lmnt" | "tavily" | "searchapi";
+export type KeyName = "gemini" | "fish" | "voicestudio" | "serpapi" | "serper" | "groq" | "openrouter" | "moonshot" | "custom" | "elevenlabs" | "lmnt" | "tavily" | "searchapi";

@@ -18,11 +18,11 @@ export function leadBrief(l: Lead) {
     l.audit &&
       `Auditoria do site: ${l.audit.ok ? "no ar" : "fora do ar"}; ${[
         l.audit.https === false && "sem https",
-        l.audit.mobile === false && "não é mobile",
+        l.audit.mobile === false && "meta viewport não identificada; responsividade não verificada",
         l.audit.ms && `${(l.audit.ms / 1000).toFixed(1)}s`,
         l.audit.platform && `feito em ${l.audit.platform}`,
-        l.audit.metaPixel ? "tem pixel da Meta" : "sem pixel da Meta",
-        l.audit.googleAds ? "tem Google Ads" : l.audit.googleTag ? "tem Google Analytics" : "sem tag do Google",
+        l.audit.metaPixel ? "tem pixel da Meta" : "pixel da Meta não identificado no HTML",
+        l.audit.googleAds ? "tag Google Ads identificada; campanha ativa não verificada" : l.audit.googleTag ? "tag Google identificada" : "tag do Google não identificada no HTML",
         l.audit.ecommerce && "tem carrinho/loja",
         l.audit.copyrightYear && `rodapé ${l.audit.copyrightYear}`,
       ]

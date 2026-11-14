@@ -1,4 +1,5 @@
 import "server-only";
+import { sameBusiness } from "./lead-identity";
 import { auditSite, parseInstagramSnippet } from "./audit";
 import { db } from "./db";
 import { classifyWebsite } from "./phone";
@@ -35,7 +36,7 @@ export async function saveFound(found: FoundPlace[]) {
   const items: { id: string; data: Lead }[] = [];
   for (const f of found) {
     const { saved: _saved, ...rest } = f;
-    const old = existing.get(f.id);
+    const old = existing.get(f.id) ?? [...existing.values()].find(l => sameBusiness(l, f));
     const lead: Lead = old
       ? rescore({
           ...old,
@@ -45,6 +46,11 @@ export async function saveFound(found: FoundPlace[]) {
             ? { website: old.website, websiteKind: old.websiteKind, mapsWebsite: old.mapsWebsite ?? rest.website, siteCheck: old.siteCheck }
             : {}),
           // dados do usuário ficam
+          id: old.id,
+          source: old.source,
+          sourceRef: old.sourceRef,
+          optOut: old.optOut || rest.optOut,
+          contactedAt: old.contactedAt,
           status: old.status,
           notes: old.notes,
           ai: old.ai,
@@ -63,7 +69,10 @@ export async function saveFound(found: FoundPlace[]) {
           updatedAt: now(),
           history: [{ at: now(), type: "criado", text: `Encontrado em "${rest.query ?? "busca"}"` }],
         }) as Lead);
-    items.push({ id: lead.id, data: lead });
+    existing.set(lead.id, lead);
+    const index = items.findIndex(i => i.id === lead.id);
+    if (index >= 0) items[index] = { id: lead.id, data: lead };
+    else items.push({ id: lead.id, data: lead });
   }
   await db.putMany("leads", items);
   return items.map((i) => i.data);

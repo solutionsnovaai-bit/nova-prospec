@@ -230,11 +230,14 @@ O QUE VOCÊ FAZ
 
 export async function copilot(history: { role: "user" | "assistant"; content: string }[]) {
   const { ownerName } = await getSettings();
-  const messages: ChatMessage[] = [{ role: "system", content: systemPrompt(ownerName || "Victor") }, ...history.slice(-12)];
+  const messages: ChatMessage[] = [{ role: "system", content: systemPrompt(ownerName || "Victor") }, ...history.slice(-12).map(m => ({ ...m, content: m.content.slice(0, 6000) }))];
   const steps: { tool: string; args: Record<string, unknown>; ok: boolean }[] = [];
   const touched = new Set<string>();
-  for (let i = 0; i < 6; i++) {
-    const r = await chat({ messages, tools: TOOLS, temperature: 0.7, maxTokens: 2400 });
+  const deadline = Date.now() + 50000;
+  let searches = 0;
+  let calls = 0;
+  for (let i = 0; i < 6 && Date.now() < deadline - 2000; i++) {
+    const r = await chat({ messages, tools: TOOLS, temperature: 0.7, maxTokens: 2400, deadline });
     if (!r.toolCalls.length) {
       return { reply: r.content || "Pronto.", steps, leadIds: [...touched], model: r.model };
     }
@@ -249,6 +252,8 @@ export async function copilot(history: { role: "user" | "assistant"; content: st
       let result: unknown;
       let ok = true;
       try {
+        if (++calls > 12 || Date.now() >= deadline - 2000) throw new Error("Limite de trabalho deste pedido atingido.");
+        if (["buscar_empresas", "procurar_instagram", "pesquisar_web", "analisar_lead"].includes(tc.function.name) && ++searches > 3) throw new Error("Limite de três pesquisas/análises por pedido atingido.");
         result = await runTool(tc.function.name, args, touched);
       } catch (e) {
         ok = false;

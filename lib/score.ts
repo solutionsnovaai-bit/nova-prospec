@@ -5,7 +5,7 @@ import type { Lead, PainKey } from "./types";
 export const PAIN_LABEL: Record<PainKey, string> = {
   sem_site: "Sem site",
   site_fraco: "Site fraco",
-  sem_trafego: "Não anuncia",
+  sem_trafego: "Rastreamento não identificado",
   sem_instagram: "Sem Instagram",
   instagram_fraco: "Instagram fraco",
   google_fraco: "Google fraco",
@@ -57,8 +57,8 @@ export function siteIsWeak(a?: Lead["audit"]): string[] {
   if (!a.ok) why.push(a.error ? `fora do ar (${a.error})` : `erro ${a.status ?? ""}`.trim());
   else {
     if (a.https === false) why.push("sem cadeado (http)");
-    if (a.mobile === false) why.push("não adapta ao celular");
-    if ((a.ms ?? 0) > 4000) why.push(`lento (${((a.ms ?? 0) / 1000).toFixed(1)} s)`);
+    if (a.mobile === false) why.push("sem indicação de viewport móvel");
+    if ((a.ms ?? 0) > 4000) why.push(`HTML demorou (${((a.ms ?? 0) / 1000).toFixed(1)} s)`);
     if (a.copyrightYear && a.copyrightYear <= new Date().getFullYear() - 3) why.push(`rodapé de ${a.copyrightYear}`);
   }
   return why;
@@ -71,17 +71,16 @@ export function computePains(l: Scorable): PainKey[] {
   if (l.websiteKind === "construtor") p.add("site_fraco");
   if (ownSite && siteIsWeak(l.audit).length) p.add("site_fraco");
 
-  // tráfego: só afirma quando dá pra saber (sem site, ou site auditado sem pixel/tag)
-  if (!ownSite && l.websiteKind !== "construtor") p.add("sem_trafego");
-  else if (l.audit?.ok && !l.audit.metaPixel && !l.audit.googleAds && !l.audit.googleTag) p.add("sem_trafego");
+  // Ausência de tag é indício sobre rastreamento, nunca prova de ausência de anúncios.
+  if (l.audit?.ok && !l.audit.metaPixel && !l.audit.googleAds && !l.audit.googleTag) p.add("sem_trafego");
 
   if (l.instagram) {
     const f = l.instagram.followers;
     if (l.instagram.quality === "fraco" || (typeof f === "number" && f < 1000)) p.add("instagram_fraco");
   } else if (l.instagramChecked) p.add("sem_instagram");
 
-  const reviews = l.reviews ?? 0;
-  if (reviews < 20 || (l.rating !== undefined && l.rating < 4.2) || !l.hours?.length) p.add("google_fraco");
+  const reviews = l.reviews;
+  if ((reviews !== undefined && reviews < 20) || (l.rating !== undefined && l.rating < 4.2)) p.add("google_fraco");
 
   const niche = guessNiche(`${l.category ?? ""} ${l.name}`, l.niche);
   const hasShop = !!l.audit?.ecommerce || l.websiteKind === "delivery";

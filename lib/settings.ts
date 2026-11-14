@@ -1,8 +1,9 @@
 import "server-only";
 import { db } from "./db";
-import type { AiConfig, KeyName, Offer, PublicSettings } from "./types";
+import type { AiConfig, KeyName, Offer, PublicSettings, VoiceConfig } from "./types";
 
 export interface Settings {
+  voice: VoiceConfig;
   keys: Partial<Record<KeyName, string>>;
   ai: AiConfig;
   messageBase: string;
@@ -39,6 +40,9 @@ const ENV_KEYS: Record<KeyName, string[]> = {
   serpapi: ["SERPAPI_KEY", "SERPAPI_API_KEY"],
   serper: ["SERPER_KEY", "SERPER_API_KEY"],
   groq: ["GROQ_API_KEY"],
+  gemini: ["GEMINI_API_KEY", "GOOGLE_API_KEY"],
+  fish: ["FISH_API_KEY"],
+  voicestudio: ["VOICESTUDIO_API_KEY"],
   openrouter: ["OPENROUTER_API_KEY"],
   moonshot: ["MOONSHOT_API_KEY", "KIMI_API_KEY"],
   custom: ["AI_API_KEY"],
@@ -56,6 +60,7 @@ function envKey(name: KeyName): string | undefined {
 export async function getSettings(): Promise<Settings> {
   const s = (await db.get<Settings>("config", "settings")) ?? ({} as Settings);
   return {
+    voice: { fishVoiceId: process.env.FISH_VOICE_ID || s.voice?.fishVoiceId || "", studioUrl: process.env.VOICESTUDIO_URL || s.voice?.studioUrl || "", studioVoice: process.env.VOICESTUDIO_VOICE || s.voice?.studioVoice || "", studioModel: process.env.VOICESTUDIO_MODEL || s.voice?.studioModel || "omnivoice" },
     keys: s.keys ?? {},
     ai: { ...DEFAULT_AI, ...(s.ai ?? {}) },
     messageBase: s.messageBase ?? DEFAULT_MESSAGE,
@@ -94,7 +99,7 @@ function mask(v?: string) {
 
 export async function publicSettings(): Promise<PublicSettings> {
   const s = await getSettings();
-  const names: KeyName[] = ["serpapi", "serper", "groq", "openrouter", "moonshot", "custom", "elevenlabs", "lmnt", "tavily", "searchapi"];
+  const names: KeyName[] = ["gemini", "fish", "voicestudio", "serpapi", "serper", "groq", "openrouter", "moonshot", "custom", "elevenlabs", "lmnt", "tavily", "searchapi"];
   const keys = Object.fromEntries(
     names.map((n) => {
       const env = envKey(n);
@@ -105,6 +110,7 @@ export async function publicSettings(): Promise<PublicSettings> {
   return {
     keys,
     ai: s.ai,
+    voice: s.voice,
     messageBase: s.messageBase,
     signature: s.signature,
     dailyLimit: s.dailyLimit,

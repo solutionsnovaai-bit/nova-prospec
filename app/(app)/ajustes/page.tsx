@@ -11,7 +11,9 @@ const KEYS: { id: KeyName; label: string; hint: string; url: string }[] = [
   { id: "tavily", label: "Tavily (pesquisa online da Nova)", hint: "1.000 por mês, grátis, renova", url: "https://app.tavily.com" },
   { id: "searchapi", label: "SearchApi (Google Maps, reserva)", hint: "100 buscas grátis", url: "https://www.searchapi.io" },
   { id: "elevenlabs", label: "ElevenLabs (voz natural da Nova)", hint: "grátis, 10 mil créditos por mês", url: "https://elevenlabs.io/app/settings/api-keys" },
-  { id: "lmnt", label: "LMNT (voz reserva)", hint: "opcional", url: "https://app.lmnt.com/account" },
+  { id: "fish", label: "Fish Audio (voz reserva)", hint: "API s2.1-pro-free; oferta até 30/11/2026. preencha o ID da voz abaixo", url: "https://fish.audio/app/api-keys" },
+  { id: "voicestudio", label: "VoiceStudio (voz e transcrição local)", hint: "preencha a URL e a voz abaixo", url: "https://github.com/debpalash/VoiceStudio" },
+  { id: "gemini", label: "Gemini (IA reserva)", hint: "use projeto Free Tier para evitar cobrança", url: "https://aistudio.google.com/apikey" },
   { id: "openrouter", label: "OpenRouter (opcional)", hint: "modelos :free", url: "https://openrouter.ai/settings/keys" },
   { id: "moonshot", label: "Kimi oficial (opcional)", hint: "Moonshot", url: "https://platform.moonshot.ai/console/api-keys" },
 ];
@@ -23,6 +25,7 @@ export default function AjustesPage() {
   const [keys, setKeys] = useState<Partial<Record<KeyName, string>>>({});
   const [f, setF] = useState<Pick<PublicSettings, "messageBase" | "signature" | "dailyLimit" | "defaultCity" | "ownerName"> | null>(null);
   const [ai, setAi] = useState<PublicSettings["ai"] | null>(null);
+  const [voice, setVoice] = useState<PublicSettings["voice"] | null>(null);
   const [models, setModels] = useState<string[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [pw, setPw] = useState({ current: "", next: "" });
@@ -31,6 +34,7 @@ export default function AjustesPage() {
     if (!settings) return;
     setF({ messageBase: settings.messageBase, signature: settings.signature, dailyLimit: settings.dailyLimit, defaultCity: settings.defaultCity, ownerName: settings.ownerName });
     setAi(settings.ai);
+    setVoice(settings.voice);
   }, [settings]);
 
   const save = async (key: string, json: Record<string, unknown>, ok: string) => {
@@ -88,7 +92,7 @@ export default function AjustesPage() {
                 <div key={u.id}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
                     <span>{u.label} {u.configured ? null : <span className="muted">· sem chave</span>}</span>
-                    <span className="num">{u.limit ? `${fmt.format(u.left ?? 0)} de ${fmt.format(u.limit)}` : "ilimitado"}</span>
+                    <span className="num">{u.limit ? `${fmt.format(u.left ?? 0)} de ${fmt.format(u.limit)}` : "cota não informada"}</span>
                   </div>
                   {u.limit ? <div className="bar" style={{ marginTop: 6 }}><i style={{ width: `${Math.min(100, ((u.left ?? 0) / u.limit) * 100)}%` }} /></div> : null}
                   <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>{u.note}</div>
@@ -120,6 +124,16 @@ export default function AjustesPage() {
           </section>
 
           <section className="panel">
+            <div className="panel-h"><h2>Reservas de voz</h2></div>
+            <div className="panel-b" style={{ display: "grid", gap: 12 }}>
+              <p>ElevenLabs → Fish Audio → VoiceStudio → navegador. A transcrição usa Groq → VoiceStudio. Só são usados serviços configurados.</p>
+              {voice && ([['fishVoiceId', 'ID da voz Fish Audio'], ['studioUrl', 'URL do VoiceStudio (HTTPS; acessível pelo servidor)'], ['studioVoice', 'ID da voz VoiceStudio'], ['studioModel', 'Modelo VoiceStudio']] as const).map(([id, label]) => <label className="field" key={id}><span>{label}</span><input className="input" value={voice[id]} onChange={e => setVoice({ ...voice, [id]: e.target.value })} /></label>)}
+              <small>Fish usa apenas s2.1-pro-free, oferta anunciada até 30/11/2026. Se acabar, passa à próxima reserva. VoiceStudio precisa estar ligado e acessível; localhost na Vercel não é o seu computador.</small>
+              <button className="btn" disabled={!voice || busy === "voice"} onClick={() => save("voice", { voice }, "Voz salva")}>Salvar voz</button>
+            </div>
+          </section>
+
+          <section className="panel">
             <div className="panel-h"><h2>Base</h2><span className="meta">{settings.storage.kind}</span></div>
             <div className="panel-b" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
               <a className="btn sm" href="/api/export">Exportar CSV</a>
@@ -139,7 +153,7 @@ export default function AjustesPage() {
             <div className="panel-b" style={{ display: "grid", gap: 12 }}>
               <label className="field">
                 <span>Provedor</span>
-                <select className="select" value={ai.provider} onChange={(e) => { const p = e.target.value as PublicSettings["ai"]["provider"]; const d = providers?.[p]; setAi({ provider: p, baseUrl: d?.baseUrl ?? "", model: d?.suggested[0] ?? "", webModel: d?.web ?? "" }); setModels([]); }}>
+                <select className="select" value={ai.provider} onChange={(e) => { const p = e.target.value as PublicSettings["ai"]["provider"]; const d = providers?.[p]; setAi({ ...ai, provider: p, baseUrl: d?.baseUrl ?? "", model: d?.suggested[0] ?? "", webModel: d?.web ?? "" }); setModels([]); }}>
                   {Object.entries(providers ?? {}).map(([id, p]) => <option key={id} value={id}>{p.label}</option>)}
                 </select>
               </label>
@@ -155,6 +169,7 @@ export default function AjustesPage() {
               {ai.provider === "custom" && (
                 <label className="field"><span>Base URL</span><input className="input mono" value={ai.baseUrl} onChange={(e) => setAi({ ...ai, baseUrl: e.target.value })} placeholder="https://…/v1" /></label>
               )}
+              <label className="field"><span><input type="checkbox" checked={ai.fallbackEnabled !== false} onChange={(e) => setAi({ ...ai, fallbackEnabled: e.target.checked })} /> Trocar automaticamente de IA quando falhar</span><small>Preserva o modelo principal. Reservas com chave: Groq → OpenRouter gratuito → Gemini Flash-Lite. Gemini/Groq devem estar em contas gratuitas; o painel não consulta seu faturamento. Kimi e endpoint personalizado continuam disponíveis como principal.</small></label>
               <div><button className="btn primary" disabled={busy === "ai"} onClick={() => save("ai", { ai }, "IA salva")}>{busy === "ai" && <Spinner />} Salvar IA</button></div>
             </div>
           </section>
