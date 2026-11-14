@@ -17,19 +17,21 @@ async function sound(url: string, init: RequestInit, signal: AbortSignal) {
   return { data, type: type === "application/octet-stream" ? "audio/mpeg" : type };
 }
 
-export async function generateSpeech(text: string, only?: "fish", preferred: "fish" | "elevenlabs" = "fish") {
+export async function generateSpeech(text: string, only?: "fish", preferred: "fish" | "elevenlabs" = "fish", strict = false) {
   const s = await getSettings();
   const voice = s.voice;
   const fish = await getKey("fish", s);
-  if (only && !fish) throw Object.assign(new Error("Falta salvar a chave Fish Audio em Ajustes → Chaves."), { status: 400 });
-  if (only && !voice.fishVoiceId) throw Object.assign(new Error("Falta o ID da voz Fish. Escolha uma voz no Fish Audio e salve seu ID em Reservas de voz; a chave API sozinha não basta."), { status: 400 });
+  const fishOnly = only === "fish" || (strict && preferred === "fish");
+  const elevenOnly = strict && preferred === "elevenlabs";
+  if (fishOnly && !fish) throw Object.assign(new Error("Falta salvar a chave Fish Audio em Ajustes → Chaves."), { status: 400 });
+  if (fishOnly && !voice.fishVoiceId) throw Object.assign(new Error("Falta o ID da voz Fish. Escolha uma voz no Fish Audio e salve seu ID em Reservas de voz; a chave API sozinha não basta."), { status: 400 });
   // Never silently switch the free promotional model to a billed model.
   if (preferred !== "elevenlabs" && fish && voice.fishVoiceId) {
     try {
-      const audio = await sound("https://api.fish.audio/v1/tts", { method: "POST", headers: { Authorization: `Bearer ${fish}`, "Content-Type": "application/json", model: "s2.1-pro-free" }, body: JSON.stringify({ text, reference_id: voice.fishVoiceId, format: "mp3" }) }, AbortSignal.timeout(only ? 22000 : 7000));
+      const audio = await sound("https://api.fish.audio/v1/tts", { method: "POST", headers: { Authorization: `Bearer ${fish}`, "Content-Type": "application/json", model: "s2.1-pro-free" }, body: JSON.stringify({ text, reference_id: voice.fishVoiceId, format: "mp3" }) }, AbortSignal.timeout(fishOnly ? 22000 : 7000));
       return { ...audio, via: "fish" };
     } catch (e) {
-      if (only) {
+      if (fishOnly) {
         const status = (e as { status?: number }).status;
         const message = status === 401 ? "Fish recusou a chave API (401). Gere outra chave e salve no campo Fish Audio."
           : status === 403 ? "Fish negou acesso (403). Confira a permissão da voz e do modelo na sua conta."
@@ -43,7 +45,8 @@ export async function generateSpeech(text: string, only?: "fish", preferred: "fi
     }
   }
   const eleven = await getKey("elevenlabs", s);
-  if (eleven && !only) {
+  if (elevenOnly && !eleven) throw Object.assign(new Error("ElevenLabs não está configurada. Confira a chave em Ajustes → Chaves."), { status: 400 });
+  if (eleven && !fishOnly) {
     const signal = AbortSignal.timeout(10000);
     const call = (id: string, model: string) => sound(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(id)}?output_format=mp3_44100_128`, {
       method: "POST", headers: { "xi-api-key": eleven, "Content-Type": "application/json" },
@@ -66,6 +69,7 @@ export async function generateSpeech(text: string, only?: "fish", preferred: "fi
       }
     }
   }
+  if (elevenOnly) throw Object.assign(new Error("ElevenLabs não conseguiu gerar a voz. Você pode tentar novamente ou escolher outra voz."), { status: 503 });
   const key = await getKey("voicestudio", s);
   if (!only && key && voice.studioUrl && voice.studioVoice) {
     try {

@@ -113,37 +113,58 @@ export function stopSpeaking() {
   if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
 }
 
-/** Usa o provedor escolhido; em falha, recorre à voz do navegador. */
-export async function speakNatural(text: string, natural: boolean, cb?: { onStart?: () => void; onEnd?: () => void }, voiceSource: VoiceSource = "fish") {
+/** Fala exclusivamente pela fonte escolhida. Erros são comunicados; sem mudança silenciosa de voz. */
+export async function speakNatural(
+  text: string,
+  natural: boolean,
+  cb?: { onStart?: () => void; onEnd?: () => void; onError?: (message: string) => void },
+  voiceSource: VoiceSource = "fish",
+) {
   stopSpeaking();
   unlockAudio();
-  if (natural && voiceSource !== "browser") {
-    try {
-      const res = await fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: cleanForSpeech(text), voiceSource }) });
-      if (res.ok) {
-        const url = URL.createObjectURL(await res.blob());
-        const a = player ?? (player = new Audio());
-        let finished = false;
-        const done = () => {
-          if (finished) return;
-          finished = true;
-          URL.revokeObjectURL(url);
-          if (endCb === done) endCb = null;
-          cb?.onEnd?.();
-        };
-        a.onplaying = () => cb?.onStart?.();
-        a.onended = done;
-        a.onerror = done;
-        endCb = done;
-        a.src = url;
-        await a.play();
-        return;
-      }
-    } catch {
-      endCb = null; /* cai na voz do navegador */
-    }
+  if (voiceSource === "browser") {
+    speak(text, cb);
+    return;
   }
-  speak(text, cb);
+
+  let url: string | null = null;
+  let finished = false;
+  const finish = (error?: string) => {
+    if (finished) return;
+    finished = true;
+    if (url) URL.revokeObjectURL(url);
+    if (endCb === stopCurrent) endCb = null;
+    if (error) cb?.onError?.(error);
+    cb?.onEnd?.();
+  };
+  const stopCurrent = () => finish();
+
+  try {
+    if (!natural) throw new Error(`A voz ${voiceSource === "fish" ? "Fish Audio" : "ElevenLabs"} não está configurada. Verifique Ajustes → Chaves.`);
+    const res = await fetch("/api/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: cleanForSpeech(text), voiceSource }),
+    });
+    if (!res.ok) {
+      const detail = await res.json().catch(() => ({}));
+      throw new Error(typeof detail.error === "string" ? detail.error : `Erro HTTP ${res.status} ao gerar áudio.`);
+    }
+    const provider = res.headers.get("x-voice");
+    if (provider !== voiceSource) throw new Error(`A resposta veio de outra voz (${provider || "desconhecida"}). Nenhum áudio diferente foi reproduzido.`);
+    const audio = await res.blob();
+    if (!audio.size) throw new Error("A API retornou um áudio vazio.");
+    url = URL.createObjectURL(audio);
+    const a = player ?? (player = new Audio());
+    a.onplaying = () => cb?.onStart?.();
+    a.onended = () => finish();
+    a.onerror = () => finish("O áudio foi gerado, mas o navegador não conseguiu reproduzi-lo.");
+    endCb = stopCurrent;
+    a.src = url;
+    await a.play();
+  } catch (e) {
+    finish(e instanceof Error ? e.message : "Falha ao gerar ou reproduzir a voz escolhida.");
+  }
 }
 
 /**
