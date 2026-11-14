@@ -60,7 +60,7 @@ function envKey(name: KeyName): string | undefined {
 export async function getSettings(): Promise<Settings> {
   const s = (await db.get<Settings>("config", "settings")) ?? ({} as Settings);
   return {
-    voice: { fishVoiceId: process.env.FISH_VOICE_ID || s.voice?.fishVoiceId || "", studioUrl: process.env.VOICESTUDIO_URL || s.voice?.studioUrl || "", studioVoice: process.env.VOICESTUDIO_VOICE || s.voice?.studioVoice || "", studioModel: process.env.VOICESTUDIO_MODEL || s.voice?.studioModel || "omnivoice" },
+    voice: { fishVoiceId: process.env.FISH_VOICE_ID || s.voice?.fishVoiceId || "a4ac1426e4a749839c86853ad613eebe", studioUrl: process.env.VOICESTUDIO_URL || s.voice?.studioUrl || "", studioVoice: process.env.VOICESTUDIO_VOICE || s.voice?.studioVoice || "", studioModel: process.env.VOICESTUDIO_MODEL || s.voice?.studioModel || "omnivoice" },
     keys: s.keys ?? {},
     ai: { ...DEFAULT_AI, ...(s.ai ?? {}) },
     messageBase: s.messageBase ?? DEFAULT_MESSAGE,
