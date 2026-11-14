@@ -28,6 +28,9 @@ export default function AjustesPage() {
   const [voice, setVoice] = useState<PublicSettings["voice"] | null>(null);
   const [models, setModels] = useState<string[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
+  const [fishAudio, setFishAudio] = useState<string | null>(null);
+  const [fishStatus, setFishStatus] = useState("");
+  useEffect(() => () => { if (fishAudio) URL.revokeObjectURL(fishAudio); }, [fishAudio]);
   const [pw, setPw] = useState({ current: "", next: "" });
 
   useEffect(() => {
@@ -52,16 +55,17 @@ export default function AjustesPage() {
 
   const testFish = async () => {
     setBusy("test-fish");
+    setFishStatus("Gerando amostra no Fish…");
+    setFishAudio(null);
     try {
       const res = await fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ testProvider: "fish" }) });
-      if (!res.ok) throw new Error("Fish não respondeu. Confira a chave e o ID da voz salvos; ElevenLabs não foi usada.");
-      const url = URL.createObjectURL(await res.blob());
-      const player = new Audio(url);
-      player.onended = () => URL.revokeObjectURL(url);
-      player.onerror = () => URL.revokeObjectURL(url);
-      try { await player.play(); } catch { URL.revokeObjectURL(url); throw new Error("Áudio gerado, mas o navegador bloqueou a reprodução. Tente novamente."); }
-      toast("Fish respondeu. ElevenLabs não foi alterada.");
-    } catch (e) { toast(e instanceof Error ? e.message : "Falha no teste", true); }
+      if (!res.ok) {
+        const result = await res.json().catch(() => ({}));
+        throw new Error(result.error || `Falha no teste (HTTP ${res.status}).`);
+      }
+      setFishAudio(URL.createObjectURL(await res.blob()));
+      setFishStatus("Áudio gerado pelo Fish. Toque em reproduzir abaixo. ElevenLabs não foi usada.");
+    } catch (e) { setFishStatus(e instanceof Error ? e.message : "Falha no teste"); }
     finally { setBusy(null); }
   };
   const checkKeys = async () => {
@@ -151,6 +155,9 @@ export default function AjustesPage() {
               {voice && ([['fishVoiceId', 'ID da voz Fish Audio'], ['studioUrl', 'URL do VoiceStudio (HTTPS; acessível pelo servidor)'], ['studioVoice', 'ID da voz VoiceStudio'], ['studioModel', 'Modelo VoiceStudio']] as const).map(([id, label]) => <label className="field" key={id}><span>{label}</span><input className="input" value={voice[id]} onChange={e => setVoice({ ...voice, [id]: e.target.value })} /></label>)}
               <small>Fish usa apenas s2.1-pro-free, oferta anunciada até 30/11/2026. Se acabar, passa à próxima reserva. VoiceStudio precisa estar ligado e acessível; localhost na Vercel não é o seu computador.</small>
               <button className="btn" disabled={!!busy} onClick={testFish}>Testar apenas Fish Audio</button>
+              {fishStatus && <p role="status" style={{ overflowWrap: "anywhere" }}>{fishStatus}</p>}
+              {fishAudio && <audio controls src={fishAudio} style={{ width: "100%" }} preload="metadata" />}
+              <p><a className="link" href="https://fish.audio/app/api-keys" target="_blank" rel="noreferrer">Abrir minhas chaves Fish</a> · <a className="link" href="https://fish.audio/" target="_blank" rel="noreferrer">Escolher uma voz no Fish</a></p>
               <small>Salve a chave e o ID da voz antes de testar. Este botão não chama ElevenLabs.</small>
               <button className="btn" disabled={!voice || busy === "voice"} onClick={() => save("voice", { voice }, "Voz salva")}>Salvar voz</button>
             </div>

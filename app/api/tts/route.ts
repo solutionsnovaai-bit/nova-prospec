@@ -12,5 +12,5 @@ export async function POST(req: Request) {
     const audio = await generateSpeech(text, input.testProvider === "fish" ? "fish" : undefined);
     if (audio) return new Response(audio.data, { headers: { "Content-Type": audio.type, "Cache-Control": "no-store", "x-voice": audio.via } });
     return fail(Object.assign(new Error("Sem voz natural disponível. Use a voz do navegador."), { status: 503 }));
-  } catch { return fail(Object.assign(new Error("Voz temporariamente indisponível."), { status: 503 })); }
+  } catch (e) { return fail(e, 503); }
 }
