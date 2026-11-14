@@ -147,7 +147,7 @@ export function Assistant({ full }: { full?: boolean }) {
     if (full && chatOpen) end.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [msgs, busy, full, chatOpen]);
 
-  const natural = !!(settings?.keys.elevenlabs?.set || settings?.keys.lmnt?.set);
+  const natural = !!(settings?.keys.fish?.set || settings?.keys.elevenlabs?.set || (settings?.keys.voicestudio?.set && settings?.voice.studioUrl && settings?.voice.studioVoice));
   const say = (t: string) => voiceOn && speakNatural(t, natural, { onStart: () => setSpeaking(true), onEnd: () => setSpeaking(false) });
   const ask = async (t: string, spoken = false) => {
     unlockAudio(); // dentro do toque: libera o som no iPhone
