@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+export type VoiceSource = "fish" | "elevenlabs" | "browser";
+
 const isIOS = () =>
   typeof navigator !== "undefined" && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
 
@@ -111,13 +113,13 @@ export function stopSpeaking() {
   if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
 }
 
-/** Voz natural (ElevenLabs ou LMNT pelo servidor); sem chave, sem saldo ou se o aparelho barrar, cai na voz do navegador. */
-export async function speakNatural(text: string, natural: boolean, cb?: { onStart?: () => void; onEnd?: () => void }) {
+/** Usa o provedor escolhido; em falha, recorre à voz do navegador. */
+export async function speakNatural(text: string, natural: boolean, cb?: { onStart?: () => void; onEnd?: () => void }, voiceSource: VoiceSource = "fish") {
   stopSpeaking();
   unlockAudio();
-  if (natural) {
+  if (natural && voiceSource !== "browser") {
     try {
-      const res = await fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: cleanForSpeech(text) }) });
+      const res = await fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: cleanForSpeech(text), voiceSource }) });
       if (res.ok) {
         const url = URL.createObjectURL(await res.blob());
         const a = player ?? (player = new Audio());
