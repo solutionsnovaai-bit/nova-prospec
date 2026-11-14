@@ -126,6 +126,8 @@ export function Assistant({ full }: { full?: boolean }) {
   const { msgs, busy, send, clear } = useCopilot();
   const [text, setText] = useState("");
   const [speaking, setSpeaking] = useState(false);
+  const [voiceLoading, setVoiceLoading] = useState(false);
+  const [voiceError, setVoiceError] = useState("");
   const [voiceOn, setVoiceOn] = useState(true);
   const [voiceSource, setVoiceSource] = useState<VoiceSource>("fish");
   const [chatOpen, setChatOpen] = useState(false);
@@ -154,11 +156,22 @@ export function Assistant({ full }: { full?: boolean }) {
   const natural = voiceSource === "fish"
     ? !!(settings?.keys.fish?.set || settings?.keys.elevenlabs?.set || studioReady)
     : voiceSource === "elevenlabs" ? !!(settings?.keys.elevenlabs?.set || studioReady) : false;
-  const say = (t: string) => voiceOn && speakNatural(t, natural, { onStart: () => setSpeaking(true), onEnd: () => setSpeaking(false) }, voiceSource);
+  const say = (t: string) => {
+    if (!voiceOn) return;
+    setVoiceError("");
+    setVoiceLoading(voiceSource !== "browser");
+    void speakNatural(t, natural, {
+      onStart: () => { setVoiceLoading(false); setSpeaking(true); },
+      onEnd: () => { setVoiceLoading(false); setSpeaking(false); },
+      onError: (message) => { setVoiceError(message); toast(message, true); },
+    }, voiceSource);
+  };
   const selectVoice = (next: VoiceSource) => {
     stopSpeaking();
     setSpeaking(false);
     setVoiceSource(next);
+    setVoiceError("");
+    setVoiceLoading(false);
     try { localStorage.setItem("np_voice_source", next); } catch {}
   };
   const ask = async (t: string, spoken = false) => {
@@ -171,13 +184,13 @@ export function Assistant({ full }: { full?: boolean }) {
   const voice = useVoice((t) => ask(t, true), (m) => toast(m, true));
 
   const b = briefing(leads, settings?.ownerName || "Victor");
-  const state: OrbState = voice.listening ? "listening" : busy || voice.working ? "thinking" : speaking ? "speaking" : "idle";
+  const state: OrbState = voice.listening ? "listening" : busy || voice.working || voiceLoading ? "thinking" : speaking ? "speaking" : "idle";
   const lastUser = [...msgs].reverse().find((m) => m.role === "user");
   const lastAi = msgs[msgs.length - 1]?.role === "assistant" ? msgs[msgs.length - 1] : undefined;
   const hint =
     voice.listening && voice.interim
       ? voice.interim
-      : { idle: "Toque no orbe e fale", listening: "Ouvindo… toque de novo para enviar", thinking: "Trabalhando…", speaking: "Falando · toque para calar" }[state];
+      : { idle: "Toque no orbe e fale", listening: "Ouvindo… toque de novo para enviar", thinking: voiceLoading ? "Gerando voz selecionada…" : "Trabalhando…", speaking: "Falando · toque para calar" }[state];
 
   const orbClick = () => {
     if (speaking) {
@@ -188,7 +201,7 @@ export function Assistant({ full }: { full?: boolean }) {
   const toggleVoice = () => {
     const v = !voiceOn;
     setVoiceOn(v);
-    if (!v) stopSpeaking();
+    if (!v) { stopSpeaking(); setVoiceLoading(false); setVoiceError(""); }
     try {
       localStorage.setItem("np_voice", v ? "on" : "off");
     } catch {}
@@ -230,6 +243,13 @@ export function Assistant({ full }: { full?: boolean }) {
           </div>
         )}
 
+        {full && (voiceLoading || voiceError) && (
+          <div role="status" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: 12, marginTop: 8 }}>
+            {voiceLoading ? <span className="muted">Gerando áudio {voiceSource === "fish" ? "no Fish Audio (até 22 s)" : "na ElevenLabs"}…</span>
+              : <span className="muted">Voz não reproduzida: {voiceError}</span>}
+            {voiceError && lastAi && <button className="btn sm" onClick={() => say(lastAi.content)}>Tentar ouvir novamente</button>}
+          </div>
+        )}
         {full ? (
           <aside className={`chat drawer ${chatOpen ? "open" : ""}`} aria-hidden={!chatOpen}>
             <div className="drawer-h">
