@@ -35,3 +35,42 @@ test('strict Fish mode reports missing credentials rather than playing another v
 test('strict ElevenLabs mode does not fall back to Fish',async()=>{reset();settings.keys={elevenlabs:'e',fish:'f'};const urls=[];global.fetch=async url=>{urls.push(url);return new Response('',{status:429})};await assert.rejects(generateSpeech('Olá',undefined,'elevenlabs',true),/ElevenLabs não conseguiu/);assert.equal(urls.length,1);assert.ok(urls[0].includes('elevenlabs.io'));});
 test('Fish test explains missing voice without calling any provider',async()=>{reset();settings.keys={fish:'f'};settings.voice.fishVoiceId='';global.fetch=async()=>assert.fail('no request');await assert.rejects(generateSpeech('teste','fish'),/ID da voz/);});
 test('Fish auth errors are actionable and do not expose upstream secrets',async()=>{reset();settings.keys={fish:'secret'};global.fetch=async()=>new Response('secret',{status:401});await assert.rejects(generateSpeech('teste','fish'),e=>e.message.includes('401')&&!e.message.includes('secret'));});
+
+test('Fish accepts balanced mode without changing selected voice or free model',async()=>{
+  reset(); settings.keys={fish:'f'};
+  const calls=[];
+  global.fetch=async(url,options)=>{
+    calls.push(url);
+    const body=JSON.parse(options.body);
+    assert.equal(body.latency,'balanced');
+    assert.equal(body.reference_id,'voice');
+    assert.equal(options.headers.model,'s2.1-pro-free');
+    return new Response(new Uint8Array([1,2]),{headers:{'content-type':'audio/mpeg'}});
+  };
+  assert.equal((await generateSpeech('Olá',undefined,'fish',true)).via,'fish');
+  assert.equal(calls.length,1);
+});
+
+test('Fish restores compatible request only on validation rejection with same timeout budget',async()=>{
+  reset(); settings.keys={fish:'f',elevenlabs:'e'};
+  const calls=[];
+  global.fetch=async(url,options)=>{
+    calls.push({url,options,body:JSON.parse(options.body)});
+    if(calls.length===1) return new Response('',{status:422});
+    return new Response(new Uint8Array([1,2]),{headers:{'content-type':'audio/mpeg'}});
+  };
+  assert.equal((await generateSpeech('Olá',undefined,'fish',true)).via,'fish');
+  assert.equal(calls.length,2);
+  assert.equal(calls[1].body.latency,undefined);
+  assert.equal(calls[0].options.signal,calls[1].options.signal);
+  assert.ok(calls.every(c=>c.url==='https://api.fish.audio/v1/tts'));
+});
+
+test('Fish does not retry partial audio failures or timeouts',async()=>{
+  for (const error of [new DOMException('timeout','TimeoutError'),new Error('stream interrupted')]) {
+    reset(); settings.keys={fish:'f',elevenlabs:'e'}; let calls=0;
+    global.fetch=async()=>{calls++;throw error;};
+    await assert.rejects(generateSpeech('Olá',undefined,'fish',true));
+    assert.equal(calls,1);
+  }
+});
