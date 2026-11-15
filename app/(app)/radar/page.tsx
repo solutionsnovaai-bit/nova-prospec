@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Pains, Score, Spinner, toast, WebLabel } from "@/components/ui";
 import { api, fmt, useLeads, useSettings, useUsage } from "@/lib/client";
+import { ProductPreview } from "@/components/product-preview";
 import { NICHES } from "@/lib/niches";
 import { REGIONS } from "@/lib/regions";
 import type { FoundPlace, SourceId } from "@/lib/types";
@@ -217,7 +218,7 @@ export default function RadarPage() {
             <span className="c-phone">Telefone</span>
             <span>Presença</span>
             <span className="c-pains">Dores</span>
-            <span>Score</span>
+            <span title="Pontuação de presença digital; não mede necessidade de sistemas internos">Score digital</span>
           </div>
           <div className="list">
             {busy && !results.length
@@ -247,6 +248,7 @@ export default function RadarPage() {
                         {p.rating ? <> · <span className="num">{p.rating.toFixed(1)}</span> ({fmt.format(p.reviews ?? 0)})</> : null}
                         {p.saved ? <> · <span className="pos">na base</span></> : null}
                       </div>
+                      <ProductPreview place={p} />
                     </div>
                     <div className="c-phone" style={{ minWidth: 0 }}>
                       {p.phone ? (

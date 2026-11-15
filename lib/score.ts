@@ -1,4 +1,5 @@
-import { GROUP_PROJECT, guessNiche } from "./niches";
+import { productIdeas } from "./opportunities";
+import { guessNiche } from "./niches";
 import { regionTier } from "./regions";
 import type { Lead, PainKey } from "./types";
 
@@ -118,17 +119,11 @@ export function rescore<T extends Scorable>(l: T): T & Pick<Lead, "pains" | "sco
   return { ...l, pains, ...computeScore(l, pains) };
 }
 
-/** Projeto visual sugerido sem IA (a IA refina na análise). */
+/** Produto sugerido sem chamada de IA. Necessidade operacional sempre precisa ser confirmada. */
 export function suggestProject(l: Scorable & { pains?: PainKey[] }) {
-  const niche = guessNiche(`${l.category ?? ""} ${l.name}`, l.niche);
   const pains = l.pains ?? computePains(l);
-  if (niche) {
-    const base = GROUP_PROJECT[niche.group];
-    if (pains.includes("site_fraco") && !pains.includes("sem_site"))
-      return { tipo: "Site novo", titulo: `Site novo no lugar do atual — ${base.titulo.toLowerCase()}` };
-    return base;
-  }
-  if (pains.includes("instagram_fraco") || pains.includes("sem_instagram"))
-    return { tipo: "Identidade visual", titulo: "Logo premium e 6 posts de feed no padrão da marca" };
-  return { tipo: "Landing page", titulo: "Página de apresentação com WhatsApp" };
+  const niche = guessNiche(`${l.category ?? ""} ${l.name}`, l.niche);
+  if (pains.includes("site_fraco")) return { tipo: "Site novo", titulo: "Revisão do site com foco nos problemas observados" };
+  if (pains.includes("sem_site") && !["comida", "varejo"].includes(niche?.group ?? "")) return { tipo: "Landing page", titulo: "Página de apresentação com serviços e contato" };
+  return productIdeas(l)[0];
 }
