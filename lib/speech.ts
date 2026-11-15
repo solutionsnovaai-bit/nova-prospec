@@ -28,7 +28,19 @@ export async function generateSpeech(text: string, only?: "fish", preferred: "fi
   // Never silently switch the free promotional model to a billed model.
   if (preferred !== "elevenlabs" && fish && voice.fishVoiceId) {
     try {
-      const audio = await sound("https://api.fish.audio/v1/tts", { method: "POST", headers: { Authorization: `Bearer ${fish}`, "Content-Type": "application/json", model: "s2.1-pro-free" }, body: JSON.stringify({ text, reference_id: voice.fishVoiceId, format: "mp3" }) }, AbortSignal.timeout(fishOnly ? 22000 : 7000));
+      // Keep the successful voice/model and the same total timeout. Balanced is
+      // Fish's documented lower-latency mode; older backends may reject it.
+      const signal = AbortSignal.timeout(fishOnly ? 22000 : 7000);
+      const callFish = (balanced: boolean) => sound("https://api.fish.audio/v1/tts", { method: "POST", headers: { Authorization: `Bearer ${fish}`, "Content-Type": "application/json", model: "s2.1-pro-free" }, body: JSON.stringify({ text, reference_id: voice.fishVoiceId, format: "mp3", ...(balanced ? { latency: "balanced" } : {}) }) }, signal);
+      let audio;
+      try {
+        audio = await callFish(true);
+      } catch (e) {
+        if (![400, 422].includes((e as { status?: number }).status ?? 0) || signal.aborted) throw e;
+        // Retry only a rejected request, never a timeout/rate limit or a partial
+        // audio response. Both attempts share the original 22/7-second budget.
+        audio = await callFish(false);
+      }
       return { ...audio, via: "fish" };
     } catch (e) {
       if (fishOnly) {
