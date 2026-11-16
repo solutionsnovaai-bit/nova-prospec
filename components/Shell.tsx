@@ -22,11 +22,21 @@ function active(path: string, href: string) {
 export function Shell({ children }: { children: ReactNode }) {
   const path = usePathname();
   const [open, setOpen] = useState(true);
-  // tela de abertura: fica 2,8 s no primeiro carregamento, depois some com fade
+  // tela de abertura: 1,7 s na primeira abertura da sessão, depois some com fade
   const [splash, setSplash] = useState<"on" | "out" | "off">("on");
   useEffect(() => {
-    const a = setTimeout(() => setSplash("out"), 2800);
-    const b = setTimeout(() => setSplash("off"), 3300);
+    // só na primeira abertura da sessão: ao recarregar ou voltar, entra direto
+    let seen = false;
+    try {
+      seen = sessionStorage.getItem("np-splash") === "1";
+      sessionStorage.setItem("np-splash", "1");
+    } catch {}
+    if (seen) {
+      setSplash("off");
+      return;
+    }
+    const a = setTimeout(() => setSplash("out"), 1700);
+    const b = setTimeout(() => setSplash("off"), 2200);
     return () => {
       clearTimeout(a);
       clearTimeout(b);
