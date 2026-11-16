@@ -28,6 +28,12 @@ export function Orb({ state, level = 0, size = 220, onClick, label }: { state: O
     let lk = 0; // 0→1 quando está ouvindo ou falando (entrada e saída suaves)
     let last = performance.now();
     const bars = new Float32Array(72); // altura suavizada de cada barra do espectro
+    // pontos do núcleo, espalhados em espiral de Fibonacci: [x, y, z, ângulo, tamanho]
+    const sph: number[][] = [];
+    for (let i = 0; i < 760; i++) {
+      const y = 1 - (i / 759) * 2, r = Math.sqrt(1 - y * y), a = i * Math.PI * (3 - Math.sqrt(5));
+      sph.push([Math.cos(a) * r, y, Math.sin(a) * r, a, 0.6 + ((i * 7919) % 97) / 97]);
+    }
 
     const blob = (t: number, a: number, phase: number, scale: number) => {
       ctx.beginPath();
@@ -150,23 +156,52 @@ export function Orb({ state, level = 0, size = 220, onClick, label }: { state: O
       ctx.fillStyle = "#5fe0a6";
       ctx.fill();
 
-      // camada externa do núcleo
-      blob(t * 0.8, amp * 1.6, 1.7, 1.16 + 0.08 * lk);
-      ctx.strokeStyle = `rgba(62,207,142,${0.42 * glow})`;
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      // núcleo
-      blob(t, amp, 0, 1 + 0.08 * lk);
-      const g = ctx.createRadialGradient(c - R * 0.25, c - R * 0.3, R * 0.05, c, c, R * 1.15);
-      g.addColorStop(0, `rgba(255,244,214,${0.95})`);
-      g.addColorStop(0.45, `rgba(226,193,114,${0.85})`);
-      g.addColorStop(1, `rgba(150,112,40,${0.25})`);
+      // núcleo: esfera de partículas dourada (parente do globo), que ondula com a voz
+      const Rn = R * (1 + 0.08 * lk);
+      blob(t, amp * 0.5, 0, 1 + 0.08 * lk);
+      const g = ctx.createRadialGradient(c - R * 0.32, c - R * 0.36, R * 0.04, c, c, Rn * 1.12);
+      g.addColorStop(0, "rgba(150,116,48,0.96)");
+      g.addColorStop(0.5, "rgba(62,46,18,0.96)");
+      g.addColorStop(1, "rgba(16,12,5,0.94)");
       ctx.fillStyle = g;
-      ctx.shadowColor = "rgba(214,178,94,0.55)";
-      ctx.shadowBlur = 26 * glow;
+      ctx.shadowColor = "rgba(214,178,94,0.6)";
+      ctx.shadowBlur = 30 * glow;
       ctx.fill();
       ctx.shadowBlur = 0;
+      const ang = spin * 0.5, crY = Math.cos(ang), srY = Math.sin(ang), ctX = Math.cos(-0.4), stX = Math.sin(-0.4);
+      const px = Math.max(0.7, size / 330);
+      for (let i = 0; i < sph.length; i++) {
+        const p = sph[i];
+        const x1 = p[0] * crY + p[2] * srY, z1 = -p[0] * srY + p[2] * crY;
+        const y2 = p[1] * ctX - z1 * stX, z2 = p[1] * stX + z1 * ctX;
+        if (z2 < -0.04) continue;
+        const n = Math.sin(p[3] * 3 + t * 1.3) * 0.5 + Math.sin(p[1] * 6 - t * 0.9 + p[3]) * 0.3 + Math.sin(p[3] * 2 + t * 0.6) * 0.2;
+        const rr = Rn * (1 + amp * 1.5 * n);
+        const k = 1 / (1 - z2 * 0.2);
+        const d = 0.28 + z2 * 0.72;
+        const lit = Math.max(0.25, 0.62 - x1 * 0.4 + y2 * 0.5 + z2 * 0.25);
+        ctx.fillStyle = `rgba(255,${(228 + 16 * lit) | 0},${(160 + 54 * lit) | 0},${Math.min(1, d * lit * (0.75 + glow * 0.35))})`;
+        const s2 = px * p[4] * (0.7 + d * 1.1);
+        ctx.beginPath();
+        ctx.arc(c + x1 * rr * k, c - y2 * rr * k, s2 / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // brilho de cima e borda acesa
+      const sp = ctx.createRadialGradient(c - Rn * 0.4, c - Rn * 0.46, 0, c - Rn * 0.4, c - Rn * 0.46, Rn * 0.95);
+      sp.addColorStop(0, `rgba(255,246,216,${0.2 + 0.12 * glow})`);
+      sp.addColorStop(1, "rgba(255,246,216,0)");
+      ctx.fillStyle = sp;
+      ctx.beginPath();
+      ctx.arc(c, c, Rn, 0, Math.PI * 2);
+      ctx.fill();
+      const rim = ctx.createRadialGradient(c, c, Rn * 0.86, c, c, Rn * 1.1);
+      rim.addColorStop(0, "rgba(233,207,143,0)");
+      rim.addColorStop(0.7, `rgba(233,207,143,${0.24 * glow})`);
+      rim.addColorStop(1, "rgba(233,207,143,0)");
+      ctx.fillStyle = rim;
+      ctx.beginPath();
+      ctx.arc(c, c, Rn * 1.1, 0, Math.PI * 2);
+      ctx.fill();
 
       if (!still) raf = requestAnimationFrame(draw);
     };
