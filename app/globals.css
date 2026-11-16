@@ -331,8 +331,9 @@ body::before {
   content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
   background:
     radial-gradient(900px 420px at 50% -80px, rgba(214, 178, 94, 0.09), transparent 70%),
+    radial-gradient(700px 380px at 12% -60px, rgba(62, 207, 142, 0.06), transparent 70%),
     radial-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1.4px);
-  background-size: auto, 26px 26px;
+  background-size: auto, auto, 26px 26px;
   -webkit-mask-image: radial-gradient(ellipse 110% 80% at 50% 0%, #000 30%, transparent 85%);
   mask-image: radial-gradient(ellipse 110% 80% at 50% 0%, #000 30%, transparent 85%);
 }
@@ -418,10 +419,10 @@ body::before {
 .hero-orb, .hero-body { position: relative; z-index: 1; }
 
 /* ---------- motion ---------- */
-@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes grow { from { transform: scaleX(0); } to { transform: none; } }
 @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
-.page > * { animation: rise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.page > * { animation: rise 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 .page > *:nth-child(2) { animation-delay: 0.07s; }
 .page > *:nth-child(3) { animation-delay: 0.14s; }
 .page > *:nth-child(4) { animation-delay: 0.21s; }
@@ -535,10 +536,10 @@ button, a, input, select { touch-action: manipulation; }
 @keyframes brainpulse { 0%, 100% { transform: scale(0.94); opacity: 0.85; } 50% { transform: scale(1.05); opacity: 1; } }
 .route-fx {
   position: fixed; left: calc(var(--rail) + (100vw - var(--rail)) / 2); top: 50%; width: 190px; height: 190px; margin: -95px 0 0 -95px;
-  z-index: 30; pointer-events: none; opacity: 0; animation: routefx 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both !important;
+  z-index: 30; pointer-events: none; opacity: 0; animation: routefx 0.6s cubic-bezier(0.22, 0.8, 0.2, 1) both !important;
 }
 .route-fx img { width: 100%; height: 100%; filter: drop-shadow(0 0 30px rgba(214, 178, 94, 0.6)); }
-@keyframes routefx { 0% { opacity: 0; transform: scale(0.6) rotate(-8deg); } 35% { opacity: 0.92; transform: scale(1.05) rotate(0); } 100% { opacity: 0; transform: scale(1.45); } }
+@keyframes routefx { 0% { opacity: 0; transform: scale(0.84); filter: blur(8px); } 38% { opacity: 0.8; transform: scale(1); filter: blur(0); } 100% { opacity: 0; transform: scale(1.16); filter: blur(3px); } }
 @media (max-width: 760px) { .route-fx { left: 50%; width: 150px; height: 150px; margin: -75px 0 0 -75px; } }
 @media (prefers-reduced-motion: reduce) { .route-fx { display: none; } }
 

@@ -30,7 +30,7 @@ export async function generateSpeech(text: string, only?: "fish", preferred: "fi
     try {
       // Keep the successful voice/model and the same total timeout. Balanced is
       // Fish's documented lower-latency mode; older backends may reject it.
-      const signal = AbortSignal.timeout(fishOnly ? 22000 : 7000);
+      const signal = AbortSignal.timeout(fishOnly ? 55000 : 7000);
       const callFish = (balanced: boolean) => sound("https://api.fish.audio/v1/tts", { method: "POST", headers: { Authorization: `Bearer ${fish}`, "Content-Type": "application/json", model: "s2.1-pro-free" }, body: JSON.stringify({ text, reference_id: voice.fishVoiceId, format: "mp3", ...(balanced ? { latency: "balanced" } : {}) }) }, signal);
       let audio;
       try {

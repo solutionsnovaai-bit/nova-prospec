@@ -2,7 +2,7 @@ import { guard } from "@/lib/auth";
 import { body, fail } from "@/lib/http";
 import { generateSpeech } from "@/lib/speech";
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
+export const maxDuration = 60;
 export async function POST(req: Request) {
   const g = await guard(); if (g) return g;
   try {
