@@ -1,4 +1,5 @@
 "use client";
+import { Globe } from "@/components/Globe";
 import { ArrowUpRight, Radar } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -82,6 +83,8 @@ export default function Overview() {
         <Mark size={164} />
         <Brand size="lg" />
       </div>
+      <div className="cosmos">
+      <Globe />
       <div className="titlerow">
         <div>
           <h1>{b.greet}</h1>
@@ -91,6 +94,7 @@ export default function Overview() {
           <Link href="/radar" className="btn primary"><Radar size={15} strokeWidth={1.6} /> Buscar empresas</Link>
           <Link href="/ia" className="btn">Falar com a Nova</Link>
         </div>
+      </div>
       </div>
 
       {first ? (

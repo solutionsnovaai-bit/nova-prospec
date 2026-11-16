@@ -22,7 +22,7 @@ function active(path: string, href: string) {
 export function Shell({ children }: { children: ReactNode }) {
   const path = usePathname();
   const [open, setOpen] = useState(true);
-  // tela de abertura: 1,7 s na primeira abertura da sessão, depois some com fade
+  // tela de abertura: 2,7 s na primeira abertura da sessão, depois some com fade
   const [splash, setSplash] = useState<"on" | "out" | "off">("on");
   useEffect(() => {
     // só na primeira abertura da sessão: ao recarregar ou voltar, entra direto
@@ -35,8 +35,8 @@ export function Shell({ children }: { children: ReactNode }) {
       setSplash("off");
       return;
     }
-    const a = setTimeout(() => setSplash("out"), 1700);
-    const b = setTimeout(() => setSplash("off"), 2200);
+    const a = setTimeout(() => setSplash("out"), 2700);
+    const b = setTimeout(() => setSplash("off"), 3200);
     return () => {
       clearTimeout(a);
       clearTimeout(b);
@@ -119,9 +119,19 @@ export function Shell({ children }: { children: ReactNode }) {
       {splash !== "off" && (
         <div className={`splash ${splash === "out" ? "out" : ""}`} aria-hidden>
           <div className="splash-in">
-            <div className="ringbox">
+            {/* o logo se forma: anéis desenham, uma varredura de luz revela o cérebro e a seta */}
+            <div className="forge">
+              <svg className="forge-rings" viewBox="0 0 250 250" aria-hidden>
+                <circle className="r1" cx="125" cy="125" r="118" />
+                <circle className="r2" cx="125" cy="125" r="104" />
+                <circle className="r3" cx="125" cy="125" r="111" />
+              </svg>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo-mark.webp" alt="" />
+              <img className="forge-ghost" src="/logo-mark.webp" alt="" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="forge-logo" src="/logo-mark.webp" alt="" />
+              <i className="forge-scan" />
+              <i className="forge-flash" />
             </div>
             <div className="splash-name"><Brand size="lg" /></div>
             <div className="splash-msgs">
