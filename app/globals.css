@@ -672,3 +672,10 @@ button, a, input, select { touch-action: manipulation; }
   .cosmos::after { background: linear-gradient(180deg, rgba(10, 17, 15, 0.55), rgba(10, 17, 15, 0.9)); }
   .cosmos .titlerow h1 { font-size: 26px; }
 }
+
+/* ---------- logo com o próprio fundo, fundido na lateral ---------- */
+.rail { background: radial-gradient(280px 250px at 50% 128px, rgba(24, 84, 60, 0.34), transparent 72%), linear-gradient(180deg, #02060b 0%, #060b0c 320px, var(--ground) 520px); }
+.rail .mark, .rail .mark img { filter: none; }
+.forge-scan { opacity: 0.5; }
+.forge-logo { filter: none; }
+.brainload img, .splash .ringbox img, .route-fx img { filter: none; }

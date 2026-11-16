@@ -27,11 +27,12 @@ export function Orb({ state, level = 0, size = 220, onClick, label }: { state: O
     let glow = 0.5;
     let lk = 0; // 0→1 quando está ouvindo ou falando (entrada e saída suaves)
     let last = performance.now();
+    const bars = new Float32Array(72); // altura suavizada de cada barra do espectro
 
     const blob = (t: number, a: number, phase: number, scale: number) => {
       ctx.beginPath();
-      for (let i = 0; i <= 96; i++) {
-        const th = (i / 96) * Math.PI * 2;
+      for (let i = 0; i <= 180; i++) {
+        const th = (i / 180) * Math.PI * 2;
         const n = Math.sin(3 * th + t * 1.3 + phase) * 0.5 + Math.sin(5 * th - t * 0.9 + phase * 2) * 0.3 + Math.sin(2 * th + t * 0.6) * 0.2;
         const r = R * scale * (1 + a * n);
         const x = c + Math.cos(th) * r;
@@ -51,7 +52,7 @@ export function Orb({ state, level = 0, size = 220, onClick, label }: { state: O
       const live = Math.max(lv, 0.4 + 0.3 * Math.sin(t * 7) * Math.sin(t * 3.1)); // mexe o tempo todo enquanto ouve
       const targetAmp = s === "listening" ? 0.06 + live * 0.26 : s === "speaking" ? 0.06 + talk * 0.16 : s === "thinking" ? 0.035 : 0.018 + 0.008 * Math.sin(t * 1.2);
       const targetGlow = s === "idle" ? 0.5 + 0.08 * Math.sin(t * 1.2) : s === "thinking" ? 0.75 : 0.85 + (s === "listening" ? lv * 0.3 : talk * 0.2);
-      amp += (targetAmp - amp) * Math.min(1, dt * 10);
+      amp += (targetAmp - amp) * Math.min(1, dt * 6.5);
       lk += ((s === "listening" || s === "speaking" ? 1 : 0) - lk) * Math.min(1, dt * 7);
       glow += (targetGlow - glow) * Math.min(1, dt * 6);
       spin += dt * (s === "thinking" ? 2.6 : s === "idle" ? 0.25 : 0.7);
@@ -67,12 +68,23 @@ export function Orb({ state, level = 0, size = 220, onClick, label }: { state: O
 
       // ondas de voz: saem do núcleo enquanto ouve (verde) ou fala (ouro)
       if (s === "listening" || s === "speaking") {
-        for (let i = 0; i < 3; i++) {
-          const k = (t * 0.55 + i / 3) % 1;
+        // anéis orgânicos: nascem finos no núcleo, abrem devagar e somem; a borda ondula com a voz
+        const e = s === "listening" ? live : 0.35 + talk * 0.65;
+        for (let i = 0; i < 4; i++) {
+          const k = (t * 0.42 + i / 4) % 1;
+          const ease = 1 - Math.pow(1 - k, 2.2);
+          const rr = R * (1.12 + ease * 1.45);
+          const wob = 0.012 + e * 0.03 * (1 - k);
           ctx.beginPath();
-          ctx.arc(c, c, R * (1.15 + k * 1.3), 0, Math.PI * 2);
-          ctx.strokeStyle = s === "listening" ? `rgba(62,207,142,${(1 - k) * 0.55})` : `rgba(226,193,114,${(1 - k) * 0.55})`;
-          ctx.lineWidth = 1.5;
+          for (let j = 0; j <= 90; j++) {
+            const th = (j / 90) * Math.PI * 2;
+            const r2 = rr * (1 + wob * Math.sin(5 * th + t * 3.2 + i * 1.9) + wob * 0.6 * Math.sin(3 * th - t * 2.1 + i));
+            const x = c + Math.cos(th) * r2, y = c + Math.sin(th) * r2;
+            if (j) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+          }
+          const al = Math.pow(1 - k, 1.8) * Math.min(1, k * 6) * 0.6 * lk;
+          ctx.strokeStyle = s === "listening" ? `rgba(62,207,142,${al})` : `rgba(226,193,114,${al})`;
+          ctx.lineWidth = 0.6 + (1 - k) * 1.8;
           ctx.stroke();
         }
       }
@@ -85,8 +97,12 @@ export function Orb({ state, level = 0, size = 220, onClick, label }: { state: O
         const r0 = R * 1.26;
         for (let i = 0; i < 72; i++) {
           const th = (i / 72) * Math.PI * 2 - Math.PI / 2;
-          const n = 0.5 + 0.5 * Math.sin(t * 6.3 + i * 1.7) * Math.sin(t * 2.9 + i * 0.37);
-          const h = R * (0.05 + energy * (0.16 + 0.5 * n)) * lk;
+          // espelhado esquerda/direita e suavizado no tempo: parece voz, não ruído
+          const m = i <= 36 ? i : 72 - i;
+          const n = 0.5 + 0.5 * Math.sin(t * 5.1 + m * 0.62) * Math.sin(t * 2.3 + m * 0.21) + 0.25 * Math.sin(t * 8.7 + m * 1.3);
+          const target = R * (0.05 + energy * (0.14 + 0.5 * Math.max(0, n)));
+          bars[i] += (target - bars[i]) * Math.min(1, dt * 14);
+          const h = bars[i] * lk;
           ctx.beginPath();
           ctx.moveTo(c + Math.cos(th) * r0, c + Math.sin(th) * r0);
           ctx.lineTo(c + Math.cos(th) * (r0 + h), c + Math.sin(th) * (r0 + h));
