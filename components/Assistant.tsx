@@ -211,11 +211,13 @@ export function Assistant({ full }: { full?: boolean }) {
   const searchLeft = search.reduce((a, u) => a + (u.left ?? 0), 0);
   const aiOk = settings ? Object.entries(settings.keys).some(([k, v]) => ["groq", "openrouter", "moonshot", "custom"].includes(k) && v.set) : false;
 
+  const orbSize = !full ? 300 : vp.w < 760 ? Math.round(Math.max(300, Math.min(vp.h * 0.62, vp.w * 1.32))) : Math.round(Math.max(200, Math.min(780, vp.h * 0.7, vp.w - 40)));
   return (
     <section className={`hero ${full ? "full" : ""}`} data-state={state}>
       {!full && <Circuits />}
-      <div className="hero-orb">
-        <Orb state={state} level={voice.level} size={full ? Math.round(Math.max(200, Math.min(780, vp.h * 0.7, vp.w - 40))) : 300} onClick={orbClick} />
+      {/* no celular a orbe passa da largura da tela: os anéis de fora saem do quadro e o núcleo fica grande */}
+      <div className="hero-orb" style={full && vp.w < 760 ? { marginTop: -Math.round(orbSize * 0.1), marginBottom: -Math.round(orbSize * 0.03) } : undefined}>
+        <Orb state={state} level={voice.level} size={orbSize} onClick={orbClick} />
         <div className="hero-hint" data-state={state}>{hint}</div>
       </div>
 

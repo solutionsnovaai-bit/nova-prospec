@@ -716,3 +716,21 @@ button, a, input, select { touch-action: manipulation; }
   .nova-fab { right: 12px; bottom: 74px; }
   .nova-dock { right: 12px; left: 12px; bottom: 70px; width: auto; max-height: 78dvh; }
 }
+
+/* ---------- acabamento ---------- */
+.panel, .kpis { position: relative; }
+.panel::before, .kpis::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: var(--spot, 0); transition: opacity 0.35s ease;
+  background: radial-gradient(340px circle at var(--mx, 50%) var(--my, 50%), rgba(214, 178, 94, 0.075), rgba(62, 207, 142, 0.03) 45%, transparent 70%);
+}
+/* rótulos que não cabem somem em degradê em vez de cortar seco */
+.c-pains { -webkit-mask-image: linear-gradient(90deg, #000 78%, transparent); mask-image: linear-gradient(90deg, #000 78%, transparent); }
+.hero.full { overflow: hidden; }
+.nova-fab .orb { animation: fabfloat 5s ease-in-out infinite; }
+@keyframes fabfloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@media (max-width: 760px) { .hero.full .hero-orb { overflow: visible; } }
+@media (max-width: 760px) {
+  .hero.full { grid-template-columns: minmax(0, 1fr); }
+  .hero.full .hero-orb { min-width: 0; width: 100%; align-items: center; }
+  .hero.full .hero-orb .orb { flex: none; }
+}

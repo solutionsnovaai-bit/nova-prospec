@@ -36,6 +36,24 @@ export function Shell({ children }: { children: ReactNode }) {
     }
   }, [onIa]);
   const spring = { type: "spring" as const, stiffness: 420, damping: 36 };
+  // luz que acompanha o ponteiro sobre os cartões
+  useEffect(() => {
+    if (!window.matchMedia("(hover: hover)").matches) return;
+    let last: HTMLElement | null = null;
+    const move = (e: PointerEvent) => {
+      const el = (e.target as HTMLElement | null)?.closest?.(".panel, .kpis") as HTMLElement | null;
+      if (last && last !== el) last.style.removeProperty("--spot");
+      if (el) {
+        const r = el.getBoundingClientRect();
+        el.style.setProperty("--mx", `${e.clientX - r.left}px`);
+        el.style.setProperty("--my", `${e.clientY - r.top}px`);
+        el.style.setProperty("--spot", "1");
+      }
+      last = el;
+    };
+    window.addEventListener("pointermove", move, { passive: true });
+    return () => window.removeEventListener("pointermove", move);
+  }, []);
   // tela de abertura: 2,7 s na primeira abertura da sessão, depois some com fade
   const [splash, setSplash] = useState<"on" | "out" | "off">("on");
   useEffect(() => {
@@ -121,7 +139,7 @@ export function Shell({ children }: { children: ReactNode }) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-mark.webp" alt="" />
         </div>
-        <motion.div className="page" key={path} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}>
+        <motion.div className="page" key={`page:${path}`} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}>
           {children}
         </motion.div>
       </main>
