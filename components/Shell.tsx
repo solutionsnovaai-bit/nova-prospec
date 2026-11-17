@@ -1,10 +1,13 @@
 "use client";
-import { Bot, ChevronsLeft, ChevronsRight, LayoutGrid, LogOut, Radar, Send, Settings, Users } from "lucide-react";
+import { Bot, ChevronsLeft, ChevronsRight, LayoutGrid, LogOut, Radar, Send, Settings, Users, X } from "lucide-react";
+import { motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { api } from "@/lib/client";
+import { Assistant } from "./Assistant";
 import { Brand, Mark } from "./Mark";
+import { Orb } from "./Orb";
 import { Toaster } from "./ui";
 
 const NAV = [
@@ -22,6 +25,17 @@ function active(path: string, href: string) {
 export function Shell({ children }: { children: ReactNode }) {
   const path = usePathname();
   const [open, setOpen] = useState(true);
+  // Nova em qualquer aba: orbe flutuante que abre a assistente num painel
+  const [nova, setNova] = useState(false);
+  const [novaReady, setNovaReady] = useState(false);
+  const onIa = path.startsWith("/ia");
+  useEffect(() => {
+    if (onIa) {
+      setNova(false);
+      setNovaReady(false); // na aba da Nova vale a orbe grande; evita duas vozes ao mesmo tempo
+    }
+  }, [onIa]);
+  const spring = { type: "spring" as const, stiffness: 420, damping: 36 };
   // tela de abertura: 2,7 s na primeira abertura da sessão, depois some com fade
   const [splash, setSplash] = useState<"on" | "out" | "off">("on");
   useEffect(() => {
@@ -67,6 +81,7 @@ export function Shell({ children }: { children: ReactNode }) {
         </Link>
         {NAV.map((n) => (
           <Link key={n.href} href={n.href} aria-current={active(path, n.href) ? "page" : undefined} aria-label={n.label}>
+            {active(path, n.href) && <motion.span layoutId="navpill" className="navpill" transition={spring} />}
             <n.icon size={18} strokeWidth={1.5} />
             <span className="lbl">{n.short === "Visão" ? "Visão geral" : n.short === "IA" ? "Nova · copiloto" : n.short}</span>
             <span className="tip">{n.label}</span>
@@ -74,6 +89,7 @@ export function Shell({ children }: { children: ReactNode }) {
         ))}
         <span className="spacer" />
         <Link href="/ajustes" aria-current={active(path, "/ajustes") ? "page" : undefined} aria-label="Ajustes">
+          {active(path, "/ajustes") && <motion.span layoutId="navpill" className="navpill" transition={spring} />}
           <Settings size={18} strokeWidth={1.5} />
           <span className="lbl">Ajustes</span>
           <span className="tip">Ajustes e chaves</span>
@@ -105,17 +121,48 @@ export function Shell({ children }: { children: ReactNode }) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-mark.webp" alt="" />
         </div>
-        <div className="page">{children}</div>
+        <motion.div className="page" key={path} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}>
+          {children}
+        </motion.div>
       </main>
 
       <nav className="bottombar" aria-label="Navegação">
         {NAV.map((n) => (
           <Link key={n.href} href={n.href} aria-current={active(path, n.href) ? "page" : undefined}>
+            {active(path, n.href) && <motion.span layoutId="tabpill" className="tabpill" transition={spring} />}
             <n.icon size={19} strokeWidth={1.5} />
             {n.short}
           </Link>
         ))}
       </nav>
+      {!onIa && (
+        <>
+          <motion.aside
+            className="nova-dock"
+            initial={false}
+            animate={nova ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 28, scale: 0.94 }}
+            transition={spring}
+            style={{ pointerEvents: nova ? "auto" : "none" }}
+            aria-hidden={!nova}
+          >
+            <button className="nova-dock-x btn ghost icon" onClick={() => setNova(false)} aria-label="Fechar a Nova">
+              <X size={16} strokeWidth={1.6} />
+            </button>
+            {novaReady && <Assistant />}
+          </motion.aside>
+          <motion.div className="nova-fab" animate={nova ? { opacity: 0, scale: 0.6 } : { opacity: 1, scale: 1 }} transition={spring} style={{ pointerEvents: nova ? "none" : "auto" }}>
+            <Orb
+              state="idle"
+              size={96}
+              label="Abrir a Nova"
+              onClick={() => {
+                setNovaReady(true);
+                setNova(true);
+              }}
+            />
+          </motion.div>
+        </>
+      )}
       {splash !== "off" && (
         <div className={`splash ${splash === "out" ? "out" : ""}`} aria-hidden>
           <div className="splash-in">
