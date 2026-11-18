@@ -1,7 +1,7 @@
 "use client";
 import useSWR, { mutate } from "swr";
 import { langByPhone } from "./countries";
-import { DIASPORA_SITE, intlMessage, siteVariant } from "./messages";
+import { CLEANING_RX, DIASPORA_SITE, intlMessage, siteVariant } from "./messages";
 import { caseLine, greeting, guessNiche } from "./niches";
 import type { Lead, ProviderUsage, PublicSettings } from "./types";
 
@@ -80,10 +80,11 @@ export function fillMessage(tpl: string, l: Lead, signature?: string) {
   const lang = diaspora ? "pt" : langByPhone(l.phoneE164);
   // fora do Brasil a oferta segue o site: sem site ou site ruim → site novo; site bom → IA no WhatsApp
   const variant = lang === "pt" && !diaspora ? "ai" : siteVariant(l);
-  const intl = intlMessage(lang, l.name, variant);
+  const cleaning = CLEANING_RX.test(`${l.category ?? ""} ${l.name}`) || l.niche === "limpeza";
+  const intl = intlMessage(lang, l.name, variant, cleaning);
   if (intl) return intl; // fora do Brasil: mensagem pronta no idioma do país
   const projeto = l.ai?.projeto.tipo ? l.ai.projeto.tipo.toLowerCase() : "um site";
-  const caso = diaspora && variant !== "ai" ? DIASPORA_SITE[variant] : caseLine(l.name, `${l.category ?? ""} ${l.name}`, l.niche);
+  const caso = diaspora && variant !== "ai" ? DIASPORA_SITE[variant === "nosite" && cleaning ? "nositeClean" : variant].replaceAll("{empresa}", l.name) : caseLine(l.name, `${l.category ?? ""} ${l.name}`, l.niche);
   return tpl
     .replaceAll("{saud}", greeting())
     .replaceAll("{caso}", caso)
