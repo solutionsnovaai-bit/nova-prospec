@@ -56,21 +56,12 @@ export function Shell({ children }: { children: ReactNode }) {
     window.addEventListener("pointermove", move, { passive: true });
     return () => window.removeEventListener("pointermove", move);
   }, []);
-  // tela de abertura: 2,7 s na primeira abertura da sessão, depois some com fade
+  // tela de abertura: aparece em todo carregamento da página (F5, abrir de novo), nunca na troca de aba.
+  // O painel fica escondido enquanto ela roda; só a nebulosa do fundo aparece por trás.
   const [splash, setSplash] = useState<"on" | "out" | "off">("on");
   useEffect(() => {
-    // só na primeira abertura da sessão: ao recarregar ou voltar, entra direto
-    let seen = false;
-    try {
-      seen = sessionStorage.getItem("np-splash") === "1";
-      sessionStorage.setItem("np-splash", "1");
-    } catch {}
-    if (seen) {
-      setSplash("off");
-      return;
-    }
-    const a = setTimeout(() => setSplash("out"), 2700);
-    const b = setTimeout(() => setSplash("off"), 3200);
+    const a = setTimeout(() => setSplash("out"), 3000);
+    const b = setTimeout(() => setSplash("off"), 3600);
     return () => {
       clearTimeout(a);
       clearTimeout(b);
@@ -93,7 +84,7 @@ export function Shell({ children }: { children: ReactNode }) {
     window.location.href = "/entrar";
   };
   return (
-    <div className="app" data-nav={open ? "open" : "closed"}>
+    <div className="app" data-nav={open ? "open" : "closed"} data-splash={splash}>
       <SpaceBackground />
       <nav className="rail" aria-label="Navegação">
         <Link href="/" className="mark" aria-label="Nova AI Solutions">
