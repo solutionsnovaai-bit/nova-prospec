@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 
-/** Fundo do painel: espaço azul-esverdeado em loop, no clima do logo original. Feito no Higgsfield. */
-const POSTER = "https://d8j0ntlcm91z4.cloudfront.net/user_34imSY1MU9eMUrKGNUV5ULpEPmX/hf_20261118_031328_73735fe5-6ea9-4bb7-9df5-1c237f55b4d1.png";
-const VIDEO = "https://d8j0ntlcm91z4.cloudfront.net/user_34imSY1MU9eMUrKGNUV5ULpEPmX/hf_20261118_031351_c1f0aa5b-4d13-4c24-983a-0909be819089.mp4";
+/** Fundo do painel: a nebulosa azul e verde da arte do logo, sem o logo, em loop. Feito no Higgsfield. */
+const POSTER = "https://d8j0ntlcm91z4.cloudfront.net/user_34imSY1MU9eMUrKGNUV5ULpEPmX/hf_20261118_031946_cded3cb2-946e-4876-b7bb-53c8018dc0e3.png";
+const VIDEO = "https://d8j0ntlcm91z4.cloudfront.net/user_34imSY1MU9eMUrKGNUV5ULpEPmX/hf_20261118_032010_b44a7e63-b5fa-48a1-a905-579c0cd04d19.mp4";
 
 export function SpaceBackground() {
   const ref = useRef<HTMLVideoElement | null>(null);

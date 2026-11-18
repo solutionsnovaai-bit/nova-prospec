@@ -156,6 +156,8 @@ export function BrainLoader({ label = "Carregando" }: { label?: string }) {
       <div className="b">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo-mark.webp" alt="" />
+        <i className="bl-flare" />
+        <i className="bl-orbit" />
       </div>
     </div>
   );

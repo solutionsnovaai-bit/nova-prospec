@@ -896,8 +896,8 @@ button, a, input, select { touch-action: manipulation; }
 
 /* fundo de espaço em vídeo (Higgsfield), atrás de tudo */
 .spacebg { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: #03100f center / cover no-repeat; }
-.spacebg video { width: 100%; height: 100%; object-fit: cover; opacity: 0.85; }
-.spacebg::after { content: ""; position: absolute; inset: 0; background: radial-gradient(120% 90% at 50% 40%, rgba(3, 10, 9, 0.35), rgba(3, 10, 9, 0.82) 75%), linear-gradient(180deg, rgba(3, 10, 9, 0.25), rgba(3, 10, 9, 0.6)); }
+.spacebg video { width: 100%; height: 100%; object-fit: cover; }
+.spacebg::after { content: ""; position: absolute; inset: 0; background: radial-gradient(130% 100% at 50% 45%, rgba(2, 6, 10, 0.18), rgba(2, 6, 10, 0.62) 80%), linear-gradient(180deg, rgba(2, 6, 10, 0.1), rgba(2, 6, 10, 0.45)); }
 .rail { z-index: 2; }
 .main { position: relative; z-index: 1; }
 /* filtros num botão só */
@@ -916,3 +916,30 @@ button, a, input, select { touch-action: manipulation; }
 .moreopts summary::before { content: "+"; display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.14); font-family: var(--mono); font-size: 12px; transition: transform 0.2s var(--ease-out); }
 .moreopts[open] summary::before { content: "−"; }
 @media (max-width: 760px) { .filterbar { flex-wrap: wrap; } .filterbar .searchf { flex-basis: 100%; } }
+
+/* ---------- intro, carregamento e transições (versão nebulosa) ---------- */
+.splash {
+  background: radial-gradient(540px 380px at 50% 42%, rgba(62, 207, 142, 0.14), transparent 70%), radial-gradient(120% 100% at 50% 50%, rgba(2, 8, 12, 0.2), rgba(2, 6, 9, 0.78) 80%);
+  transition: opacity 0.45s cubic-bezier(0.23, 1, 0.32, 1), visibility 0.45s;
+}
+.splash-in { transition: transform 0.45s cubic-bezier(0.23, 1, 0.32, 1), filter 0.45s ease, opacity 0.45s ease; }
+.splash.out .splash-in { transform: scale(1.06); filter: blur(8px); opacity: 0; }
+/* a linha de luz ciano da arte do espaço nasce no centro quando o logo trava */
+.splash-flare {
+  grid-area: 1 / 1; place-self: center; width: 150vw; max-width: 1400px; height: 2px; border-radius: 2px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(120, 230, 255, 0.0) 15%, rgba(140, 240, 255, 0.85) 50%, rgba(120, 230, 255, 0) 85%, transparent);
+  box-shadow: 0 0 18px 2px rgba(110, 220, 255, 0.55), 0 0 60px 8px rgba(62, 207, 142, 0.25);
+  transform: scaleX(0); opacity: 0; animation: flare 1.6s cubic-bezier(0.23, 1, 0.32, 1) 1.15s both; z-index: -1;
+}
+@keyframes flare { 0% { transform: scaleX(0); opacity: 0; } 25% { opacity: 1; } 100% { transform: scaleX(1); opacity: 0.35; } }
+/* carregamento entre telas: cérebro com linha de luz e um ponto orbitando */
+.brainload .b { width: 170px; height: 170px; }
+.bl-flare {
+  position: absolute; left: 50%; top: 50%; width: 260px; height: 1.5px; margin-left: -130px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(140, 240, 255, 0.8), transparent); box-shadow: 0 0 14px rgba(110, 220, 255, 0.5);
+  animation: blflare 1.6s ease-in-out infinite; z-index: -1;
+}
+@keyframes blflare { 0%, 100% { transform: scaleX(0.35); opacity: 0.25; } 50% { transform: scaleX(1); opacity: 0.85; } }
+.bl-orbit { position: absolute; inset: -6px; border-radius: 50%; animation: spin 2.4s linear infinite; pointer-events: none; }
+.bl-orbit::before { content: ""; position: absolute; top: -3px; left: 50%; width: 7px; height: 7px; margin-left: -3.5px; border-radius: 50%; background: #fff3cf; box-shadow: 0 0 12px 3px rgba(243, 216, 145, 0.85); }
+@media (prefers-reduced-motion: reduce) { .splash-flare, .bl-flare, .bl-orbit { animation: none; } .splash-flare { transform: none; opacity: 0.35; } }
