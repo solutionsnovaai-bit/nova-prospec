@@ -1,5 +1,6 @@
 import { productIdeas } from "./opportunities";
 import { GROUP_PROJECT, guessNiche, TARGET_GROUPS } from "./niches";
+import { normalizeIntlPhone, normalizePhone } from "./phone";
 import { regionTier } from "./regions";
 import type { Lead, PainKey } from "./types";
 
@@ -161,9 +162,22 @@ export function computeScore(l: Scorable, pains = computePains(l)) {
   return { score, temperature: temperatureOf(score) };
 }
 
+/**
+ * Telefone do Google Maps é fixo, mas o site tem botão de WhatsApp: usa o WhatsApp do site,
+ * que costuma cair direto em quem atende (e a Bia consegue chamar). O fixo fica guardado.
+ */
+export function preferWhatsapp<T extends Partial<Lead>>(l: T): T {
+  const wa = l.audit?.socials?.whatsapp;
+  if (!wa || l.phoneKind === "celular") return l;
+  const ph = l.country && l.country !== "br" ? normalizeIntlPhone(wa, l.country) : normalizePhone(wa);
+  if (!ph.e164 || ph.kind !== "celular" || ph.e164 === l.phoneE164) return l;
+  return { ...l, phoneFixo: l.phoneFixo ?? l.phone, phone: ph.pretty, phoneE164: ph.e164, phoneKind: "celular" };
+}
+
 export function rescore<T extends Scorable>(l: T): T & Pick<Lead, "pains" | "score" | "temperature"> {
-  const pains = computePains(l);
-  return { ...l, pains, ...computeScore(l, pains) };
+  const w = preferWhatsapp(l as T & Partial<Lead>) as T;
+  const pains = computePains(w);
+  return { ...w, pains, ...computeScore(w, pains) };
 }
 
 /** Produto sugerido sem chamada de IA. Necessidade operacional sempre precisa ser confirmada. */

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Pains, Score, Spinner, toast, WebLabel } from "./ui";
 import { api, fmt, useLeads, useSettings, useUsage } from "@/lib/client";
+import { AutoRadarCard } from "./AutoRadarCard";
 import { ProductPreview } from "./product-preview";
 import { NICHES } from "@/lib/niches";
 import { REGIONS } from "@/lib/regions";
@@ -144,6 +145,8 @@ export function RadarView({ intl = false }: { intl?: boolean }) {
           </div>
         </div>
       </div>
+
+      <AutoRadarCard onSaved={reloadLeads} />
 
       <section className="panel" style={{ marginBottom: "var(--gap)" }}>
         <form

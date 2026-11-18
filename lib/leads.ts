@@ -17,7 +17,7 @@ export async function listLeads(): Promise<Lead[]> {
     const l = raw.district && /^\d/.test(raw.district) ? { ...raw, district: undefined } : raw;
     // régua do score muda com o tempo: recalcula na leitura e grava só quem mudou
     const r = rescore(l) as Lead;
-    if (r.score !== raw.score || r.temperature !== raw.temperature || r.pains.join() !== (raw.pains ?? []).join()) {
+    if (r.score !== raw.score || r.temperature !== raw.temperature || r.phoneE164 !== raw.phoneE164 || r.pains.join() !== (raw.pains ?? []).join()) {
       changed.push({ id: r.id, data: r });
       return r;
     }

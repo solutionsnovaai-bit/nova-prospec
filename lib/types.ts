@@ -143,6 +143,7 @@ export interface Lead {
   phone?: string;
   phoneE164?: string;
   phoneKind?: "celular" | "fixo";
+  phoneFixo?: string; // fixo do Google Maps quando o WhatsApp veio do site
   website?: string;
   websiteKind: WebsiteKind;
   siteCheck?: SiteCheck;
