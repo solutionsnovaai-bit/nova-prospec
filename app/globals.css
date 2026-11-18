@@ -946,6 +946,13 @@ button, a, input, select { touch-action: manipulation; }
 
 /* enquanto a abertura roda, o painel some; ele entra quando a abertura sai */
 .app > .rail, .app > .main, .app > .bottombar, .app .nova-fab, .app .nova-dock { transition: opacity 0.6s cubic-bezier(0.23, 1, 0.32, 1), transform 0.6s cubic-bezier(0.23, 1, 0.32, 1); }
-.app[data-splash="on"] > .rail, .app[data-splash="on"] > .main, .app[data-splash="on"] > .bottombar,
+.app > .topbar { transition: opacity 0.6s cubic-bezier(0.23, 1, 0.32, 1); }
+.app[data-splash="on"] > .rail, .app[data-splash="on"] > .main, .app[data-splash="on"] > .bottombar, .app[data-splash="on"] > .topbar,
 .app[data-splash="on"] .nova-fab, .app[data-splash="on"] .nova-dock { opacity: 0; visibility: hidden; transform: scale(0.985); }
 .splash { background: radial-gradient(520px 360px at 50% 42%, rgba(62, 207, 142, 0.12), transparent 70%), radial-gradient(130% 100% at 50% 50%, rgba(2, 6, 10, 0.05), rgba(2, 6, 10, 0.55) 80%); }
+
+/* abertura centralizada de verdade (o Safari jogava o logo pra direita): peças grandes saem da grade */
+.forge { overflow: visible; }
+.forge-canvas { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); place-self: auto; }
+.splash-flare { position: absolute; left: 50%; top: 50%; width: min(150vw, 1400px); margin-left: calc(min(150vw, 1400px) / -2); margin-top: -1px; place-self: auto; }
+.splash { overflow: hidden; }
