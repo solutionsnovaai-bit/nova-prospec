@@ -240,30 +240,39 @@ export function RadarView({ intl = false }: { intl?: boolean }) {
                   );
                 })}
               </div>
-              <div style={{ display: "grid", gap: 6 }}>
-                {([["Prioridade", REGIONS.prioridade], ["SP e interior", REGIONS.cidades], ["Brasil", REGIONS.brasil], ["Regional SP", REGIONS.regional]] as const).map(([label, list]) => (
-                  <div key={label} className="chips" style={{ alignItems: "center" }}>
-                    <span className="muted" style={{ fontSize: 12, width: 96 }}>{label}</span>
-                    {list.map((r) => (
-                      <button type="button" key={r} className="chip" aria-pressed={location === r} onClick={() => setLocation(r)}>{r.split(",")[0]}</button>
-                    ))}
-                  </div>
-                ))}
-              </div>
             </>
           )}
+          <details className="moreopts">
+            <summary>Mais opções: {intl ? "fonte da busca" : "regiões e fonte da busca"}</summary>
+            <div style={{ display: "grid", gap: 12, paddingTop: 12 }}>
+              {!intl && (
+                <>
+              <div style={{ display: "grid", gap: 6 }}>
+                  {([["Prioridade", REGIONS.prioridade], ["SP e interior", REGIONS.cidades], ["Brasil", REGIONS.brasil], ["Regional SP", REGIONS.regional]] as const).map(([label, list]) => (
+                    <div key={label} className="chips" style={{ alignItems: "center" }}>
+                      <span className="muted" style={{ fontSize: 12, width: 96 }}>{label}</span>
+                      {list.map((r) => (
+                        <button type="button" key={r} className="chip" aria-pressed={location === r} onClick={() => setLocation(r)}>{r.split(",")[0]}</button>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+                  </>
+              )}
           <div className="tabs" role="tablist" aria-label="Fonte">
-            {((intl ? ["auto", "serpapi", "serper", "searchapi"] : ["auto", "serpapi", "serper", "searchapi", "osm"]) as Src[]).map((s) => (
-              <button type="button" key={s} role="tab" aria-selected={source === s} onClick={() => setSource(s)}>
-                {srcLabel(s)}
-              </button>
-            ))}
-          </div>
-          <div className="muted" style={{ fontSize: 12 }}>
-            {source === "osm"
-              ? "OpenStreetMap: grátis e ilimitado, mas com menos telefones e sem avaliações."
-              : `Cada busca traz até 20 empresas e gasta 1 crédito grátis${places.length > 1 ? ` por bairro (${places.length} no total)` : ""}. No automático: SerpApi → Serper → SearchApi → OpenStreetMap.`}
-          </div>
+                {((intl ? ["auto", "serpapi", "serper", "searchapi"] : ["auto", "serpapi", "serper", "searchapi", "osm"]) as Src[]).map((s) => (
+                  <button type="button" key={s} role="tab" aria-selected={source === s} onClick={() => setSource(s)}>
+                    {srcLabel(s)}
+                  </button>
+                ))}
+              </div>
+              <div className="muted" style={{ fontSize: 12 }}>
+                {source === "osm"
+                  ? "OpenStreetMap: grátis e ilimitado, mas com menos telefones e sem avaliações."
+                  : `Cada busca traz até 20 empresas e gasta 1 crédito grátis${places.length > 1 ? ` por bairro (${places.length} no total)` : ""}. No automático: SerpApi → Serper → SearchApi → OpenStreetMap.`}
+              </div>
+                </div>
+          </details>
           {err && <div className="notice neg">{err}</div>}
         </form>
       </section>

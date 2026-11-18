@@ -284,7 +284,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   }
   .topbar .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; }
   .bottombar {
-    display: grid; grid-template-columns: repeat(6, 1fr); position: fixed; bottom: 0; left: 0; right: 0; z-index: 25;
+    display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; bottom: 0; left: 0; right: 0; z-index: 25;
     background: rgba(19, 18, 23, 0.98); border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom);
   }
   .bottombar a { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 0 9px; font-size: 11px; color: var(--muted); min-height: 54px; }
@@ -893,3 +893,26 @@ button, a, input, select { touch-action: manipulation; }
 .splash-name { animation-delay: 1.35s; }
 .splash-name .brand, .splash-name * { letter-spacing: 0.04em; }
 .forge { animation: forgepop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.3) 1.2s both; }
+
+/* fundo de espaço em vídeo (Higgsfield), atrás de tudo */
+.spacebg { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: #03100f center / cover no-repeat; }
+.spacebg video { width: 100%; height: 100%; object-fit: cover; opacity: 0.85; }
+.spacebg::after { content: ""; position: absolute; inset: 0; background: radial-gradient(120% 90% at 50% 40%, rgba(3, 10, 9, 0.35), rgba(3, 10, 9, 0.82) 75%), linear-gradient(180deg, rgba(3, 10, 9, 0.25), rgba(3, 10, 9, 0.6)); }
+.rail { z-index: 2; }
+.main { position: relative; z-index: 1; }
+/* filtros num botão só */
+.filterbar { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
+.filterbar .searchf { flex: 1; min-width: 0; }
+.filterbar .input { height: 42px; border-radius: 13px; }
+.filterbtn { height: 42px; border-radius: 13px; }
+.filterbtn.on { border-color: rgba(214, 178, 94, 0.6); color: #fbe7b3; }
+.filterbtn .badge { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--gold-grad); color: #1c1506; font-size: 11px; font-weight: 700; display: inline-grid; place-items: center; }
+.filterdrawer { animation: rowin 0.22s var(--ease-out) both; transform-origin: top; }
+/* Radar: Brasil/Mundo e opções recolhidas */
+.radar-switch { margin-bottom: 18px; }
+.moreopts { border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 12px; }
+.moreopts summary { cursor: pointer; color: var(--text-2); font-size: 12.5px; list-style: none; display: inline-flex; align-items: center; gap: 8px; }
+.moreopts summary::-webkit-details-marker { display: none; }
+.moreopts summary::before { content: "+"; display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.14); font-family: var(--mono); font-size: 12px; transition: transform 0.2s var(--ease-out); }
+.moreopts[open] summary::before { content: "−"; }
+@media (max-width: 760px) { .filterbar { flex-wrap: wrap; } .filterbar .searchf { flex-basis: 100%; } }

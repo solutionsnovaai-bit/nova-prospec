@@ -1,5 +1,5 @@
 "use client";
-import { Download, Search } from "lucide-react";
+import { Download, Search, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
@@ -23,6 +23,7 @@ function LeadsInner() {
   const [onlyMobile, setOnlyMobile] = useState(false);
   const [minScore, setMinScore] = useState(0);
   const [origem, setOrigem] = useState(sp.get("origem") ?? ""); // "", "br", "intl", região ou país
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [view, setView] = useState<"lista" | "funil">(sp.get("view") === "funil" ? "funil" : "lista");
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
@@ -77,6 +78,7 @@ function LeadsInner() {
     [base, status],
   );
 
+  const activeFilters = (nicho ? 1 : 0) + (minScore ? 1 : 0) + pains.length + (onlyMobile ? 1 : 0) + (origem.startsWith("r:") || (origem.length === 2 && origem !== "br") ? 1 : 0);
   const painCount = (p: PainKey) => base.filter((l) => l.pains.includes(p)).length;
 
   const bulk = async (action: "status" | "delete", st?: LeadStatus) => {
@@ -155,14 +157,24 @@ function LeadsInner() {
         </div>
       </div>
 
-      <section className="panel" style={{ marginBottom: "var(--gap)" }}>
+      <div className="filterbar">
+        <label className="field searchf" style={{ position: "relative" }}>
+          <span className="sr">Buscar</span>
+          <Search size={15} style={{ position: "absolute", left: 13, top: 12, color: "var(--muted)" }} />
+          <input className="input" style={{ paddingLeft: 36 }} placeholder="Buscar por nome, cidade, telefone ou @" value={q} onChange={(e) => setQ(e.target.value)} />
+        </label>
+        <button className={`btn filterbtn ${filtersOpen ? "on" : ""}`} onClick={() => setFiltersOpen((v) => !v)} aria-expanded={filtersOpen}>
+          <SlidersHorizontal size={15} strokeWidth={1.7} /> Filtros
+          {activeFilters > 0 && <span className="badge">{activeFilters}</span>}
+        </button>
+        {activeFilters > 0 && (
+          <button className="btn ghost sm" onClick={() => { setNicho(""); setMinScore(0); setPains([]); setOnlyMobile(false); if (origem.startsWith("r:") || (origem.length === 2 && origem !== "br")) setOrigem("intl"); }}>Limpar</button>
+        )}
+      </div>
+      {filtersOpen && (
+      <section className="panel filterdrawer" style={{ marginBottom: "var(--gap)" }}>
         <div className="panel-b" style={{ paddingTop: 16, display: "grid", gap: 12 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr) 170px 160px", gap: 10 }} className="lf">
-            <label className="field" style={{ position: "relative" }}>
-              <span className="sr">Buscar</span>
-              <Search size={14} style={{ position: "absolute", left: 12, top: 10, color: "var(--muted)" }} />
-              <input className="input" style={{ paddingLeft: 34 }} placeholder="Nome, bairro, telefone ou @" value={q} onChange={(e) => setQ(e.target.value)} />
-            </label>
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 190px 180px", gap: 10 }} className="lf">
             <select className="select" value={nicho} onChange={(e) => setNicho(e.target.value)} aria-label="Nicho">
               <option value="">Todos os nichos</option>
               {niches.map(([n, c]) => (
@@ -208,6 +220,7 @@ function LeadsInner() {
           </div>
         </div>
       </section>
+      )}
 
       {view === "lista" ? (
         <section className="panel">

@@ -1,5 +1,6 @@
 "use client";
-import { Bot, ChevronsLeft, ChevronsRight, Globe2, LayoutGrid, LogOut, Radar, Send, Settings, Users, X } from "lucide-react";
+import { Bot, ChevronsLeft, ChevronsRight, LayoutGrid, LogOut, Radar, Send, Settings, Users, X } from "lucide-react";
+import { SpaceBackground } from "./SpaceBackground";
 import { LogoForge } from "./LogoForge";
 import { motion } from "motion/react";
 import Link from "next/link";
@@ -13,8 +14,7 @@ import { Toaster } from "./ui";
 
 const NAV = [
   { href: "/", label: "Visão geral", short: "Visão", icon: LayoutGrid },
-  { href: "/radar", label: "Radar · buscar empresas no Brasil", short: "Radar", icon: Radar },
-  { href: "/internacional", label: "Internacional · buscar fora do Brasil", short: "Mundo", icon: Globe2 },
+  { href: "/radar", label: "Radar · buscar empresas no Brasil e no mundo", short: "Radar", icon: Radar },
   { href: "/leads", label: "Leads", short: "Leads", icon: Users },
   { href: "/abordar", label: "Abordar no WhatsApp", short: "Abordar", icon: Send },
   { href: "/ia", label: "Copiloto IA", short: "IA", icon: Bot },
@@ -94,6 +94,7 @@ export function Shell({ children }: { children: ReactNode }) {
   };
   return (
     <div className="app" data-nav={open ? "open" : "closed"}>
+      <SpaceBackground />
       <nav className="rail" aria-label="Navegação">
         <Link href="/" className="mark" aria-label="Nova AI Solutions">
           <Mark size={open ? 220 : 86} />

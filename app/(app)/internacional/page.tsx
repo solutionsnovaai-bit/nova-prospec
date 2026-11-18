@@ -1,5 +1,5 @@
-import { RadarView } from "@/components/RadarView";
+import { redirect } from "next/navigation";
 
 export default function InternacionalPage() {
-  return <RadarView intl />;
+  redirect("/radar?mundo=1");
 }
