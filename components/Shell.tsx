@@ -1,5 +1,6 @@
 "use client";
 import { Bot, ChevronsLeft, ChevronsRight, Globe2, LayoutGrid, LogOut, Radar, Send, Settings, Users, X } from "lucide-react";
+import { LogoForge } from "./LogoForge";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -185,19 +186,14 @@ export function Shell({ children }: { children: ReactNode }) {
       {splash !== "off" && (
         <div className={`splash ${splash === "out" ? "out" : ""}`} aria-hidden>
           <div className="splash-in">
-            {/* o logo se forma: anéis desenham, uma varredura de luz revela o cérebro e a seta */}
+            {/* o logo se forma: anéis desenham e o cérebro se monta com os próprios pixels */}
             <div className="forge">
               <svg className="forge-rings" viewBox="0 0 250 250" aria-hidden>
                 <circle className="r1" cx="125" cy="125" r="118" />
                 <circle className="r2" cx="125" cy="125" r="104" />
                 <circle className="r3" cx="125" cy="125" r="111" />
               </svg>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="forge-ghost" src="/logo-mark.webp" alt="" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="forge-logo" src="/logo-mark.webp" alt="" />
-              <i className="forge-scan" />
-              <i className="forge-flash" />
+              <LogoForge />
             </div>
             <div className="splash-name"><Brand size="lg" /></div>
             <div className="splash-msgs">

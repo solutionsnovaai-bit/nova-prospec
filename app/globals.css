@@ -886,3 +886,10 @@ button, a, input, select { touch-action: manipulation; }
   .titlerow h1 { font-size: 26px; line-height: 32px; }
   .tabs { width: 100%; }
 }
+
+/* abertura: logo montado por partículas */
+.forge-canvas { grid-area: 1 / 1; place-self: center; pointer-events: none; filter: drop-shadow(0 0 22px rgba(214, 178, 94, 0.35)); }
+.forge { position: relative; }
+.splash-name { animation-delay: 1.35s; }
+.splash-name .brand, .splash-name * { letter-spacing: 0.04em; }
+.forge { animation: forgepop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.3) 1.2s both; }

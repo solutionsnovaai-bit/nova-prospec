@@ -52,8 +52,9 @@ export async function saveAutoRadar(patch: Partial<AutoRadarState>) {
 }
 
 function brPlan(i: number) {
+  // nicho e cidade andam juntos: cada rodada passa por regiões diferentes do Brasil
   const n = BR_NICHES[i % BR_NICHES.length];
-  const city = BR_CITIES[Math.floor(i / BR_NICHES.length) % BR_CITIES.length];
+  const city = BR_CITIES[(i * 5 + Math.floor(i / BR_CITIES.length)) % BR_CITIES.length];
   return { niche: searchPhrase(n), nicheId: n.id, location: city, country: undefined as string | undefined, label: `${n.label} · ${city}` };
 }
 

@@ -370,7 +370,7 @@ export function RadarView({ intl = false }: { intl?: boolean }) {
           <button className="btn sm gold" disabled={!sel.size} onClick={() => save(results.filter((p) => sel.has(p.id)))}>
             Salvar selecionados
           </button>
-          <Link href="/leads" className="btn sm ghost">Ver base</Link>
+          <Link href={intl ? "/leads?origem=intl" : "/leads?origem=br"} className="btn sm ghost">{intl ? "Ver leads do Mundo" : "Ver leads do Brasil"}</Link>
         </div>
       )}
       <style>{`@media (max-width: 760px){ .radar-form{ grid-template-columns: 1fr !important; } }`}</style>

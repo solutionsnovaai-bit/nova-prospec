@@ -1,8 +1,9 @@
 "use client";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Pains, Score, toast, WebLabel, WhatsAppButton } from "@/components/ui";
 import { api, fillMessage, patchLeadCache, relTime, useLeads, useSettings } from "@/lib/client";
+import { countryByPhone } from "@/lib/countries";
 import { contactWindow } from "@/lib/niches";
 import { isTargetLead } from "@/lib/score";
 import type { Lead } from "@/lib/types";
@@ -16,8 +17,9 @@ export default function AbordarPage() {
   const { settings } = useSettings();
   const limit = settings?.dailyLimit ?? 25;
 
+  const [origem, setOrigem] = useState<"" | "br" | "intl">("");
   const d = useMemo(() => {
-    const all = (leads ?? []).filter((l) => !l.optOut && l.source !== "exemplo");
+    const all = (leads ?? []).filter((l) => !l.optOut && l.source !== "exemplo" && (!origem || (origem === "intl") === !!countryByPhone(l.phoneE164)));
     const start = new Date();
     start.setHours(0, 0, 0, 0);
     const sentToday = all.filter((l) => l.history?.some((h) => h.type === "mensagem" && new Date(h.at) >= start)).length;
@@ -30,7 +32,7 @@ export default function AbordarPage() {
       .sort((a, b) => lastSent(a) - lastSent(b));
     const cold = all.filter((l) => l.status === "abordado" && sentCount(l) >= 3 && Date.now() - lastSent(l) > 4 * DAY);
     return { sentToday, queue, follow, cold };
-  }, [leads]);
+  }, [leads, origem]);
 
   const sent = async (l: Lead, message: string) => {
     try {
@@ -78,6 +80,11 @@ export default function AbordarPage() {
       <div className="titlerow">
         <div>
           <h1>Abordar</h1>
+          <div className="tabs" role="tablist" aria-label="Origem" style={{ margin: "12px 0 6px" }}>
+            {([["", "Todos"], ["br", "🇧🇷 Brasil"], ["intl", "🌎 Mundo"]] as const).map(([v, label]) => (
+              <button key={v} role="tab" aria-selected={origem === v} onClick={() => setOrigem(v)}>{label}</button>
+            ))}
+          </div>
           <div className="sub">
             Abre a conversa no seu WhatsApp com a mensagem pronta. Um por um, sem disparo em massa: é isso que protege o número.
           </div>

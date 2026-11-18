@@ -22,7 +22,7 @@ function LeadsInner() {
   const [nicho, setNicho] = useState(sp.get("nicho") ?? "");
   const [onlyMobile, setOnlyMobile] = useState(false);
   const [minScore, setMinScore] = useState(0);
-  const [origem, setOrigem] = useState(""); // "", "br", "intl", região ou país
+  const [origem, setOrigem] = useState(sp.get("origem") ?? ""); // "", "br", "intl", região ou país
   const [view, setView] = useState<"lista" | "funil">(sp.get("view") === "funil" ? "funil" : "lista");
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
@@ -133,6 +133,13 @@ function LeadsInner() {
       <div className="titlerow">
         <div>
           <h1>Leads</h1>
+          <div className="tabs" role="tablist" aria-label="Origem" style={{ margin: "12px 0 6px" }}>
+            {([["", "Todos"], ["br", "🇧🇷 Brasil"], ["intl", "🌎 Mundo"]] as const).map(([v, label]) => (
+              <button key={v} role="tab" aria-selected={origem === v || (v === "intl" && (origem.startsWith("r:") || (origem.length === 2 && origem !== "br")))} onClick={() => setOrigem(v)}>
+                {label} <span className="count">{v === "" ? all.length : all.filter((l) => (v === "br" ? !countryByPhone(l.phoneE164) : !!countryByPhone(l.phoneE164))).length}</span>
+              </button>
+            ))}
+          </div>
           <div className="sub">
             {isLoading ? <span className="skel" style={{ width: 220, height: 14 }} /> : <>{fmt.format(counts.todos)} na base · ordenados pela oportunidade</>}
           </div>
