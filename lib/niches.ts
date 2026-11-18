@@ -88,12 +88,12 @@ export function isTargetNiche(text: string, hint?: string) {
 export function caseLine(name: string, text: string, hint?: string) {
   const g = guessNiche(text, hint)?.group;
   if (g === "juridico")
-    return `Hoje tem escritório trabalhista e previdenciário recebendo consulta agendada todo dia pelo WhatsApp, sem ninguém da equipe encostar no celular: uma IA chama, qualifica o caso e já entrega na agenda do advogado. Fui eu que montei.\n\nVi ${name} no Google e fiquei com uma pergunta: quantos desses clientes podiam estar na agenda de vocês?`;
+    return "montei uma IA que entrega consulta agendada todo dia pelo WhatsApp pra escritórios trabalhistas e previdenciários. Quantos desses clientes podiam estar na agenda de vocês?";
   if (g === "consorcio")
-    return `Hoje tem operação de consórcio recebendo lead pronto todo dia pelo WhatsApp: uma IA dispara pras listas, qualifica crédito e lance e entrega o cliente quente direto pro consultor. Fui eu que montei.\n\nVi ${name} no Google e fiquei com uma pergunta: quantas dessas vendas podiam estar saindo daí?`;
+    return "montei uma IA que entrega lead de consórcio pronto todo dia pelo WhatsApp, direto pro consultor. Quantas dessas vendas podiam estar saindo daí?";
   if (g && TARGET_GROUPS.includes(g))
-    return `Hoje tem escritório de advocacia e operação de consórcio recebendo cliente agendado todo dia pelo WhatsApp, sem ninguém da equipe encostar no celular: uma IA chama, qualifica e já entrega na agenda. Fui eu que montei, e a mesma máquina roda no seu tipo de negócio.\n\nVi ${name} no Google e fiquei com uma pergunta: quantos clientes estão ficando na mesa hoje?`;
-  return `Vi ${name} no Google e quis te contar: aqui na NOVA.AI SOLUTIONS a gente tem uma IA no WhatsApp que responde, qualifica e agenda clientes sozinha, 24h.`;
+    return "montei uma IA que entrega cliente agendado todo dia pelo WhatsApp, sem ninguém encostar no celular. Quantos desses clientes podiam estar na agenda de vocês?";
+  return `vi ${name} no Google e montei uma IA que responde, qualifica e agenda clientes pelo WhatsApp, 24h. Quantos clientes ficam sem resposta aí hoje?`;
 }
 
 export function greeting(at = new Date()) {

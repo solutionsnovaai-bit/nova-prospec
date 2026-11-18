@@ -27,13 +27,11 @@ export const DEFAULT_OFFERS: Offer[] = [
   { id: "trafego", nome: "Tráfego pago (Meta e Google)", quando: "Não tem pixel nem tag de anúncios no site" },
 ];
 
-export const DEFAULT_MESSAGE = `Olá, {saud}! Sei que vocês são incrivelmente ocupados e devem receber um monte de mensagens, mas essa leva só 20 segundos pra ler.
+export const DEFAULT_MESSAGE = `Olá, {saud}! Sei que vocês são incrivelmente ocupados, então vou direto: {caso}
 
-{caso}
+Topa 30 min pra eu te mostrar? Mesmo uma resposta curta faria meu dia mais feliz.
 
-Gostaria de agendar uma conversa rápida de 30 minutos pra mostrar como isso pode aumentar seus resultados. Eu entendo se estiverem ocupados, mas mesmo uma resposta curta faria meu dia mais feliz.
-
-Obrigado, Victor – NOVA.AI SOLUTIONS`;
+Victor – NOVA.AI SOLUTIONS`;
 
 const DEFAULT_AI: AiConfig = {
   provider: "groq",
