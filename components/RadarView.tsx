@@ -31,7 +31,7 @@ export function RadarView({ intl = false }: { intl?: boolean }) {
   const [err, setErr] = useState("");
   const [region, setRegion] = useState<Region>("americas");
   const [country, setCountry] = useState("us");
-  const [intlNiche, setIntlNiche] = useState("law");
+  const [intlNiche, setIntlNiche] = useState("cleaning");
   const cty = COUNTRIES.find((c) => c.id === country) ?? COUNTRIES[0];
 
   const nicheId = intl ? undefined : NICHES.find((n) => n.label.toLowerCase() === niche.trim().toLowerCase())?.id;

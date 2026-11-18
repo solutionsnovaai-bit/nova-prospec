@@ -67,7 +67,7 @@ export const NICHES: Niche[] = [
   { id: "academia", label: "Academia e luta", group: "servico", words: ["academia", "crossfit", "jiu", "muay", "pilates", "fitness"], osm: ["leisure=fitness_centre", "leisure=sports_centre"] },
   { id: "dentista", label: "Dentista", group: "saude", words: ["dentist", "odonto"], osm: ["amenity=dentist", "healthcare=dentist"] },
   { id: "clinica", label: "Clínica e consultório", group: "saude", words: ["clínica", "clinica", "fisio", "psicól", "nutri", "médic"], osm: ["amenity=clinic", "amenity=doctors", "healthcare=physiotherapist"] },
-  { id: "limpeza", label: "Limpeza e home care", group: "servico", words: ["limpeza", "diarista", "cuidador", "home care"], osm: ['office=company][name~"Limp",i', 'craft=cleaning'] },
+  { id: "limpeza", label: "Limpeza e home care", group: "servico", words: ["limpeza", "diarista", "cuidador", "home care", "cleaning", "cleaners", "limpieza", "nettoyage", "reinigung", "schoonmaak", "pulizie"], osm: ['office=company][name~"Limp",i', 'craft=cleaning'] },
   { id: "oficina", label: "Oficina mecânica", group: "auto", words: ["oficina", "mecânic", "funilaria", "auto center"], osm: ["shop=car_repair"] },
   { id: "autopecas", label: "Autopeças e desmonte", group: "auto", words: ["autopeç", "auto peç", "desmonte", "peças"], osm: ["shop=car_parts"] },
   { id: "lavarapido", label: "Lava-rápido e estética automotiva", group: "auto", words: ["lava", "lavagem", "estética automotiva", "polimento"], osm: ["amenity=car_wash"] },

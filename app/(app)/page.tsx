@@ -25,7 +25,7 @@ const ANSWERED: LeadStatus[] = ["respondeu", "negociando", "reuniao", "fechado"]
 const GROUP_NAME: Partial<Record<NicheGroup, string>> = {
   juridico: "Advocacia", consorcio: "Consórcio", financeiro: "Crédito e seguros", consultoria: "Contábil e tributário",
   imobiliario: "Imobiliária", energia: "Energia solar", saude_premium: "Odonto e estética", educacao: "Escolas e autoescola",
-  veiculos: "Seminovos", diaspora: "Brasileiros lá fora",
+  veiculos: "Seminovos", diaspora: "Brasileiros lá fora", servico: "Serviços (limpeza e casa)",
 };
 
 /** Placar: de quem a Bia já chamou, quantos responderam, por nicho e por país. */
