@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { Pains, Score, toast, WebLabel, WhatsAppButton } from "@/components/ui";
 import { api, fillMessage, patchLeadCache, relTime, useLeads, useSettings } from "@/lib/client";
 import { contactWindow } from "@/lib/niches";
+import { isTargetLead } from "@/lib/score";
 import type { Lead } from "@/lib/types";
 
 const DAY = 86400000;
@@ -22,7 +23,7 @@ export default function AbordarPage() {
     const sentToday = all.filter((l) => l.history?.some((h) => h.type === "mensagem" && new Date(h.at) >= start)).length;
     const queue = all
       .filter((l) => ["novo", "qualificado", "demo"].includes(l.status) && l.phoneE164)
-      .sort((a, b) => Number(!!b.demoUrl) - Number(!!a.demoUrl) || Number(b.phoneKind === "celular") - Number(a.phoneKind === "celular") || b.score - a.score);
+      .sort((a, b) => Number(isTargetLead(b)) - Number(isTargetLead(a)) || Number(!!b.demoUrl) - Number(!!a.demoUrl) || Number(b.phoneKind === "celular") - Number(a.phoneKind === "celular") || b.score - a.score);
     // cadência: 2ª mensagem depois de 2 dias, última depois de mais 4; com 3 sem resposta, esfriou
     const follow = all
       .filter((l) => l.status === "abordado" && sentCount(l) < 3 && Date.now() - lastSent(l) > (sentCount(l) <= 1 ? 2 : 4) * DAY)

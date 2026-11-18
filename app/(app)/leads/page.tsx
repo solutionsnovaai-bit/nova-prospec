@@ -6,6 +6,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { MATRIX_FILTER, nicheLabel } from "@/components/PainMatrix";
 import { Pains, Score, Spinner, StatusPill, toast, WebLabel } from "@/components/ui";
 import { api, fmt, relTime, useLeads } from "@/lib/client";
+import { COUNTRIES, REGION_LABEL, countryByPhone, type Region } from "@/lib/countries";
 import { PAIN_LABEL, PAIN_ORDER } from "@/lib/score";
 import { STATUS_LABEL, STATUS_ORDER, type Lead, type LeadStatus, type PainKey } from "@/lib/types";
 
@@ -21,13 +22,14 @@ function LeadsInner() {
   const [nicho, setNicho] = useState(sp.get("nicho") ?? "");
   const [onlyMobile, setOnlyMobile] = useState(false);
   const [minScore, setMinScore] = useState(0);
+  const [origem, setOrigem] = useState(""); // "", "br", "intl", região ou país
   const [view, setView] = useState<"lista" | "funil">(sp.get("view") === "funil" ? "funil" : "lista");
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<string | null>(null);
 
-  useEffect(() => setSel(new Set()), [status, pains, nicho, onlyMobile, minScore, q]);
+  useEffect(() => setSel(new Set()), [status, pains, nicho, onlyMobile, minScore, q, origem]);
 
   const all = leads ?? [];
   const niches = useMemo(() => {
@@ -41,6 +43,10 @@ function LeadsInner() {
     return all.filter((l) => {
       if (term && !`${l.name} ${l.category} ${l.district} ${l.phone} ${l.instagram?.handle ?? ""}`.toLowerCase().includes(term)) return false;
       if (nicho && nicheLabel(l) !== nicho) return false;
+      if (origem) {
+        const c = countryByPhone(l.phoneE164);
+        if (origem === "br" ? !!c : origem === "intl" ? !c : origem.startsWith("r:") ? c?.region !== origem.slice(2) : c?.id !== origem) return false;
+      }
       if (onlyMobile && l.phoneKind !== "celular") return false;
       if (l.score < minScore) return false;
       for (const p of pains) {
@@ -49,7 +55,16 @@ function LeadsInner() {
       }
       return true;
     });
-  }, [all, q, nicho, onlyMobile, minScore, pains]);
+  }, [all, q, nicho, onlyMobile, minScore, pains, origem]);
+
+  const paises = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const l of all) {
+      const c = countryByPhone(l.phoneE164);
+      if (c) m.set(c.id, (m.get(c.id) ?? 0) + 1);
+    }
+    return [...m.entries()].map(([id, n]) => ({ c: COUNTRIES.find((x) => x.id === id)!, n }));
+  }, [all]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { todos: base.filter((l) => l.status !== "descartado").length };
@@ -135,7 +150,7 @@ function LeadsInner() {
 
       <section className="panel" style={{ marginBottom: "var(--gap)" }}>
         <div className="panel-b" style={{ paddingTop: 16, display: "grid", gap: 12 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr) 160px", gap: 10 }} className="lf">
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr) 170px 160px", gap: 10 }} className="lf">
             <label className="field" style={{ position: "relative" }}>
               <span className="sr">Buscar</span>
               <Search size={14} style={{ position: "absolute", left: 12, top: 10, color: "var(--muted)" }} />
@@ -147,10 +162,28 @@ function LeadsInner() {
                 <option key={n} value={n}>{n} ({c})</option>
               ))}
             </select>
+            <select className="select" value={origem} onChange={(e) => setOrigem(e.target.value)} aria-label="Origem">
+              <option value="">Brasil e exterior</option>
+              <option value="br">🇧🇷 Só Brasil</option>
+              <option value="intl">🌎 Só internacional</option>
+              <optgroup label="Região">
+                {(Object.keys(REGION_LABEL) as Region[]).map((r) => (
+                  <option key={r} value={`r:${r}`}>{REGION_LABEL[r]}</option>
+                ))}
+              </optgroup>
+              {paises.length > 0 && (
+                <optgroup label="País">
+                  {paises.map(({ c, n }) => (
+                    <option key={c.id} value={c.id}>{c.flag} {c.name} ({n})</option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
             <select className="select" value={minScore} onChange={(e) => setMinScore(Number(e.target.value))} aria-label="Score mínimo">
               <option value={0}>Qualquer score</option>
-              <option value={45}>Morno ou quente (45+)</option>
-              <option value={65}>Só quentes (65+)</option>
+              <option value={55}>Morno ou quente (55+)</option>
+              <option value={80}>Só quentes (80+)</option>
+              <option value={90}>Os melhores (90+)</option>
             </select>
           </div>
           <div className="chips">

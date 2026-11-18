@@ -12,7 +12,19 @@ import type { FoundPlace, HistoryItem, Lead, LeadStatus } from "./types";
 const now = () => new Date().toISOString();
 
 export async function listLeads(): Promise<Lead[]> {
-  const all = (await db.all<Lead>("leads")).map((l) => (l.district && /^\d/.test(l.district) ? { ...l, district: undefined } : l));
+  const changed: { id: string; data: Lead }[] = [];
+  const all = (await db.all<Lead>("leads")).map((raw) => {
+    const l = raw.district && /^\d/.test(raw.district) ? { ...raw, district: undefined } : raw;
+    // régua do score muda com o tempo: recalcula na leitura e grava só quem mudou
+    const r = rescore(l) as Lead;
+    if (r.score !== raw.score || r.temperature !== raw.temperature || r.pains.join() !== (raw.pains ?? []).join()) {
+      changed.push({ id: r.id, data: r });
+      return r;
+    }
+    return l;
+  });
+  // grava em lotes para não pesar a primeira carga; o resto já sai recalculado na tela
+  if (changed.length) await db.putMany("leads", changed.slice(0, 150)).catch(() => undefined);
   return all.sort((a, b) => b.score - a.score || b.updatedAt.localeCompare(a.updatedAt));
 }
 

@@ -1,4 +1,4 @@
-import { fetchJson, SourceError, toFound, type SearchInput, type SearchOutput } from "./common";
+import { fetchJson, googleParams, SourceError, toFound, type SearchInput, type SearchOutput } from "./common";
 
 type SerperPlace = {
   title?: string;
@@ -34,7 +34,7 @@ export async function serperSearch(key: string, input: SearchInput): Promise<Sea
   const r = await fetchJson("https://google.serper.dev/places", {
     method: "POST",
     headers: headers(key),
-    body: JSON.stringify({ q: `${input.niche} em ${input.location}`, gl: "br", hl: "pt-br", page }),
+    body: JSON.stringify({ q: googleParams(input).q, gl: googleParams(input).gl, hl: googleParams(input).hl, page }),
     timeoutMs: 30000,
   });
   check(r);

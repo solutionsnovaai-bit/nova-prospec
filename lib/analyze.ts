@@ -2,7 +2,7 @@ import "server-only";
 import { chat, parseJsonLoose } from "./ai";
 import { addHistory, ensureSite, saveLead } from "./leads";
 import { WEBSITE_LABEL } from "./phone";
-import { PAIN_LABEL, siteIsWeak, suggestProject } from "./score";
+import { isTargetLead, PAIN_LABEL, siteIsWeak, suggestProject } from "./score";
 import { getSettings } from "./settings";
 import type { AiAnalysis, Lead } from "./types";
 
@@ -45,13 +45,14 @@ export function leadBrief(l: Lead) {
 const SYSTEM = `Você é o analista comercial da Nova AI Solutions, uma agência de São Paulo que vende para pequenos comércios: landing pages e sites, loja virtual, cardápio digital, identidade visual (logo premium), gestão de Instagram e tráfego pago, agenda online, catálogo digital, orçamento online, painel de pedidos, CRM leve e assistente de IA. Priorize um produto de escopo fechado que faça sentido; serviços recorrentes entram depois.
 A estratégia de prospecção é MOSTRAR antes de vender: para cada negócio, a agência monta uma peça visual de alto padrão (uma página/site, um cardápio digital, um catálogo, uma identidade visual ou um feed) e manda o link na primeira mensagem do WhatsApp.
 Não deduza ausência de agenda, CRM ou automação a partir do perfil público. Separe fatos observados de hipóteses e inclua uma pergunta de validação. Um site existente não elimina outras oportunidades.
+EXCEÇÃO — NICHOS DE MENSALIDADE (advocacia, consórcio, crédito, seguros, precatórios, contabilidade/tributário, imobiliária, energia solar; foco atual da agência): aqui não se monta peça visual. O produto é a máquina de agendamentos, com mensalidade: IA no WhatsApp que dispara para listas, qualifica e agenda (casos reais rodando em escritório trabalhista, escritório previdenciário e operação de consórcio em SP, sem citar nomes de clientes), mais anúncio no Meta direto para o WhatsApp. Use projeto.tipo "Assistente IA", ofertas começando pela máquina de agendamentos, e a mensagem curta seguindo a estrutura da mensagem base (mesmo começo e mesmo final), sem link de prévia.
 Seu trabalho: analisar o negócio com os dados reais abaixo e decidir qual peça visual impressiona mais esse dono e abre a venda. Nunca invente números, avaliações ou fatos que não estejam nos dados; quando algo não estiver claro, diga "não dá pra saber".
 Responda SEMPRE em português do Brasil, direto, sem floreio, e SOMENTE com um JSON válido.`;
 
 function userPrompt(l: Lead, offers: string, base: string, extra?: string) {
   const sug = suggestProject(l);
   return `DADOS DO NEGÓCIO
-${leadBrief(l)}
+${leadBrief(l)}${isTargetLead(l) ? "\nNICHO-ALVO de mensalidade — siga a EXCEÇÃO do sistema (sem peça visual; mensagem com {saud} e {caso}, sem {demo})." : ""}
 ${extra ? `\nPESQUISA NA WEB\n${extra}\n` : ""}
 SERVIÇOS DA AGÊNCIA
 ${offers}

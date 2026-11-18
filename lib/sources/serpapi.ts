@@ -1,4 +1,4 @@
-import { fetchJson, SourceError, toFound, type RawPlace, type SearchInput, type SearchOutput } from "./common";
+import { fetchJson, googleParams, SourceError, toFound, type RawPlace, type SearchInput, type SearchOutput } from "./common";
 
 const DAYS: Record<string, string> = {
   monday: "segunda",
@@ -37,9 +37,9 @@ export async function serpapiSearch(key: string, input: SearchInput): Promise<Se
   const params = new URLSearchParams({
     engine: "google_maps",
     type: "search",
-    q: `${input.niche} em ${input.location}`,
-    hl: "pt-br",
-    gl: "br",
+    q: googleParams(input).q,
+    hl: googleParams(input).hl,
+    gl: googleParams(input).gl,
     api_key: key,
   });
   if (page > 0) params.set("start", String(page * 20));

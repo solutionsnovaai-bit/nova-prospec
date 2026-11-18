@@ -54,6 +54,7 @@ export type PainKey =
   | "sem_site"
   | "site_fraco"
   | "sem_trafego"
+  | "sem_whatsapp"
   | "sem_instagram"
   | "instagram_fraco"
   | "google_fraco"
@@ -136,6 +137,7 @@ export interface Lead {
   address?: string;
   district?: string;
   city?: string;
+  country?: string; // ISO-2 (br quando vazio)
   lat?: number;
   lng?: number;
   phone?: string;

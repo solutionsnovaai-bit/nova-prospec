@@ -1,4 +1,5 @@
-import { classifyWebsite, normalizePhone } from "../phone";
+import { countryById, searchQuery } from "../countries";
+import { classifyWebsite, normalizeIntlPhone, normalizePhone } from "../phone";
 import { guessNiche } from "../niches";
 import { rescore } from "../score";
 import type { FoundPlace, SourceId } from "../types";
@@ -8,6 +9,13 @@ export interface SearchInput {
   nicheId?: string;
   location: string; // "Itaim Paulista, São Paulo"
   page?: number; // 0-based
+  country?: string; // ISO-2; vazio = Brasil
+}
+
+/** Parâmetros do Google por país (gl/hl) e a frase de busca no idioma certo. */
+export function googleParams(input: SearchInput) {
+  const c = input.country && input.country !== "br" ? countryById(input.country) : undefined;
+  return { gl: c?.id ?? "br", hl: c?.hl.toLowerCase() ?? "pt-br", q: searchQuery(input.niche, input.location, c?.lang ?? "pt") };
 }
 
 export interface SearchOutput {
@@ -67,11 +75,13 @@ export function splitAddress(addr?: string): { district?: string; city?: string 
 }
 
 export function toFound(r: RawPlace, input: SearchInput): FoundPlace {
-  const ph = normalizePhone(r.phone);
+  const intl = !!input.country && input.country !== "br";
+  const ph = intl ? normalizeIntlPhone(r.phone, input.country!) : normalizePhone(r.phone);
   const web = classifyWebsite(r.website);
   const igHandle = r.instagram || web.instagram;
   const niche = guessNiche(`${r.category ?? ""} ${(r.categories ?? []).join(" ")} ${r.name}`, input.nicheId);
-  const { district, city } = splitAddress(r.address);
+  const split = intl ? { district: undefined, city: input.location.split(",")[0].trim() } : splitAddress(r.address);
+  const { district, city } = split;
   const base = {
     id: `${r.source}:${r.ref}`,
     source: r.source,
@@ -83,6 +93,7 @@ export function toFound(r: RawPlace, input: SearchInput): FoundPlace {
     address: r.address,
     district,
     city,
+    country: intl ? input.country : undefined,
     lat: r.lat,
     lng: r.lng,
     phone: ph.pretty ?? r.phone,

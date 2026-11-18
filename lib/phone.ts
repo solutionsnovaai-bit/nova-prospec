@@ -1,4 +1,22 @@
+import { countryById } from "./countries";
 import type { WebsiteKind } from "./types";
+
+/** Telefone de fora do Brasil: E.164 sem "+" pelo DDI do país; celular só quando o país tem regra clara. */
+export function normalizeIntlPhone(raw: string | null | undefined, country: string): { e164?: string; kind?: "celular" | "fixo"; pretty?: string } {
+  const c = countryById(country);
+  if (!raw || !c) return normalizePhone(raw);
+  let d = raw.replace(/\D/g, "");
+  if (raw.trim().startsWith("+") || d.startsWith("00")) d = d.replace(/^00/, "");
+  else if (d.startsWith(c.ddi) && d.length > c.nsnLen[1]) {
+    /* já veio com DDI */
+  } else d = c.ddi + d.replace(/^0+/, "");
+  if (!d.startsWith(c.ddi)) return { pretty: raw };
+  const nsn = d.slice(c.ddi.length);
+  if (nsn.length < c.nsnLen[0] - 1 || nsn.length > c.nsnLen[1] + 1) return { pretty: raw };
+  // EUA/Canadá: o Google não diz se é celular; WhatsApp funciona em boa parte, então conta como celular
+  const kind = c.mobile ? (c.mobile.test(nsn) ? "celular" : "fixo") : "celular";
+  return { e164: d, kind, pretty: `+${c.ddi} ${nsn}` };
+}
 
 /** Normaliza telefone brasileiro para E.164 sem "+" (ex.: 5511987654321) e diz se é celular. */
 export function normalizePhone(raw?: string | null): { e164?: string; kind?: "celular" | "fixo"; pretty?: string } {

@@ -1,5 +1,5 @@
 "use client";
-import { Bot, ChevronsLeft, ChevronsRight, LayoutGrid, LogOut, Radar, Send, Settings, Users, X } from "lucide-react";
+import { Bot, ChevronsLeft, ChevronsRight, Globe2, LayoutGrid, LogOut, Radar, Send, Settings, Users, X } from "lucide-react";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -12,7 +12,8 @@ import { Toaster } from "./ui";
 
 const NAV = [
   { href: "/", label: "Visão geral", short: "Visão", icon: LayoutGrid },
-  { href: "/radar", label: "Radar · buscar empresas", short: "Radar", icon: Radar },
+  { href: "/radar", label: "Radar · buscar empresas no Brasil", short: "Radar", icon: Radar },
+  { href: "/internacional", label: "Internacional · buscar fora do Brasil", short: "Mundo", icon: Globe2 },
   { href: "/leads", label: "Leads", short: "Leads", icon: Users },
   { href: "/abordar", label: "Abordar no WhatsApp", short: "Abordar", icon: Send },
   { href: "/ia", label: "Copiloto IA", short: "IA", icon: Bot },

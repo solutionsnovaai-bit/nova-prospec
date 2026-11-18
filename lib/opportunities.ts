@@ -8,6 +8,14 @@ export interface ProductIdea { tipo: string; titulo: string; motivo: string; per
 export function productIdeas(l: Business): ProductIdea[] {
   const n = guessNiche(`${l.category ?? ""} ${l.name}`, l.niche);
   const idea = (tipo: string, titulo: string, pergunta: string, itens: string[]): ProductIdea => ({tipo, titulo, pergunta, itens, motivo: n ? `Compatível com ${n.label.toLowerCase()}; necessidade a confirmar.` : "Sugestão inicial; confirmar a rotina do negócio."});
+  if (n?.group === "juridico") return [
+    idea("Assistente IA", "IA no WhatsApp que qualifica e agenda consultas", "Hoje quem responde os contatos que chegam no WhatsApp do escritório, e em quanto tempo?", ["Resposta em segundos, 24h", "Triagem do caso", "Consulta agendada", "Aviso pro advogado no WhatsApp"]),
+    idea("Captação", "Anúncio direto pro WhatsApp + IA de atendimento", "Vocês já investem em anúncio pra trazer cliente novo?", ["Campanha no Meta direto pro WhatsApp", "IA que qualifica e agenda", "Disparo para listas próprias", "Relatório semanal"]),
+  ];
+  if (n?.group === "consorcio") return [
+    idea("Disparo + IA", "Lead de consórcio qualificado entregue ao consultor", "Como vocês trabalham as listas de contatos hoje?", ["Disparo para listas no ritmo seguro", "IA que qualifica crédito, prazo e lance", "Lead quente direto pro consultor", "Aviso de agendamento"]),
+    idea("Captação", "Anúncio de crédito/carta direto pro WhatsApp", "Vocês já anunciam pra gerar lead próprio?", ["Campanha no Meta direto pro WhatsApp", "IA que atende na hora", "Passagem pro consultor certo", "Relatório semanal"]),
+  ];
   if (n?.group === "comida") return [
     idea("Cardápio digital", "Menu com pedido pelo WhatsApp", "Vocês já têm um cardápio próprio com pedido pelo WhatsApp?", ["Categorias e produtos", "Seleção de itens", "Resumo do pedido", "Envio ao WhatsApp"]),
     idea("Painel de pedidos", "Pedidos organizados em uma tela", "Como vocês acompanham o andamento dos pedidos hoje?", ["Fila de pedidos", "Etapas do preparo", "Busca por cliente", "Histórico"]),

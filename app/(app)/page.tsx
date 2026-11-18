@@ -10,6 +10,7 @@ import { PainMatrix } from "@/components/PainMatrix";
 import { Count, Pains, Score, Spinner, toast, WebLabel, WhatsAppButton } from "@/components/ui";
 import { api, fmt, patchLeadCache, useLeads, useSettings } from "@/lib/client";
 import { regionTier } from "@/lib/regions";
+import { isTargetLead } from "@/lib/score";
 import { STATUS_LABEL, type Lead, type LeadStatus } from "@/lib/types";
 
 const tierRank = (l: Lead) => {
@@ -33,7 +34,7 @@ export default function Overview() {
     // fila: prévia pronta primeiro, depois score
     const queue = [...open]
       .filter((l) => l.phoneE164 || l.source === "exemplo")
-      .sort((a, b) => tierRank(a) - tierRank(b) || Number(!!b.demoUrl) - Number(!!a.demoUrl) || b.score - a.score)
+      .sort((a, b) => Number(isTargetLead(b)) - Number(isTargetLead(a)) || tierRank(a) - tierRank(b) || Number(!!b.demoUrl) - Number(!!a.demoUrl) || b.score - a.score)
       .slice(0, 6);
     const weekAgo = Date.now() - 7 * 86400000;
     const contactedWeek = all.filter((l) => l.contactedAt && new Date(l.contactedAt).getTime() > weekAgo).length;

@@ -18,6 +18,7 @@ export interface Settings {
 }
 
 export const DEFAULT_OFFERS: Offer[] = [
+  { id: "agendamentos", nome: "Máquina de agendamentos (IA no WhatsApp + disparo + anúncio)", quando: "Advocacia (trabalhista, previdenciário) e consórcio: mensalidade recorrente" },
   { id: "landing", nome: "Landing page / site", quando: "Sem site, ou site fraco (sem celular, sem https, lento, antigo)" },
   { id: "loja", nome: "Loja virtual / catálogo", quando: "Vende produto e não tem loja online" },
   { id: "cardapio", nome: "Cardápio digital", quando: "Hamburgueria, lanchonete, pizzaria, açaí, restaurante" },
@@ -26,8 +27,13 @@ export const DEFAULT_OFFERS: Offer[] = [
   { id: "trafego", nome: "Tráfego pago (Meta e Google)", quando: "Não tem pixel nem tag de anúncios no site" },
 ];
 
-export const DEFAULT_MESSAGE = `Oi, tudo bem? Aqui é da Nova. Vi a {empresa} no Google e montei uma prévia de {projeto} pra vocês, sem compromisso: {demo}
-Posso te mostrar como ficaria no ar?`;
+export const DEFAULT_MESSAGE = `Olá, {saud}! Sei que vocês são incrivelmente ocupados e devem receber um monte de mensagens, mas essa leva só 20 segundos pra ler.
+
+{caso}
+
+Gostaria de agendar uma conversa rápida de 30 minutos pra mostrar como isso pode aumentar seus resultados. Eu entendo se estiverem ocupados, mas mesmo uma resposta curta faria meu dia mais feliz.
+
+Obrigado, Victor – NOVA.AI SOLUTIONS`;
 
 const DEFAULT_AI: AiConfig = {
   provider: "groq",

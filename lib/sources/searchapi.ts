@@ -1,4 +1,4 @@
-import { fetchJson, SourceError, toFound, type SearchInput, type SearchOutput } from "./common";
+import { fetchJson, googleParams, SourceError, toFound, type SearchInput, type SearchOutput } from "./common";
 
 type Place = {
   title?: string;
@@ -19,7 +19,7 @@ type Place = {
 
 /** SearchApi.io: Google Maps, 100 buscas grátis no cadastro. Terceira opção da cascata. */
 export async function searchapiSearch(key: string, input: SearchInput): Promise<SearchOutput> {
-  const params = new URLSearchParams({ engine: "google_maps", q: `${input.niche} em ${input.location}`, hl: "pt-br", gl: "br", api_key: key });
+  const params = new URLSearchParams({ engine: "google_maps", q: googleParams(input).q, hl: googleParams(input).hl, gl: googleParams(input).gl, api_key: key });
   if (input.page) params.set("page", String(input.page + 1));
   const r = await fetchJson(`https://www.searchapi.io/api/v1/search?${params}`, { timeoutMs: 45000 });
   const j = r.json as { error?: string; local_results?: Place[] } | null;

@@ -7,7 +7,7 @@ import { PAIN_LABEL } from "./score";
 import { getSettings } from "./settings";
 import { runSearch, webAnswer } from "./sources";
 import { readPage } from "./sources/reader";
-import { NICHES } from "./niches";
+import { NICHES, searchPhrase } from "./niches";
 import { STATUS_ORDER, type Lead, type LeadStatus, type PainKey } from "./types";
 
 const TOOLS: ToolDef[] = [
@@ -35,7 +35,7 @@ const TOOLS: ToolDef[] = [
       parameters: {
         type: "object",
         properties: {
-          nicho: { type: "string", description: "ex.: hamburgueria, pet shop, clínica de estética" },
+          nicho: { type: "string", description: "ex.: advocacia trabalhista, advocacia previdenciária, consórcio, Consórcio Porto, Consórcio Embracon" },
           local: { type: "string", description: "Bairro e cidade, ex.: Itaim Paulista, São Paulo" },
         },
         required: ["nicho", "local"],
@@ -128,7 +128,7 @@ async function runTool(name: string, args: Record<string, unknown>, touched: Set
       const nicho = String(args.nicho ?? "");
       const local = String(args.local ?? "");
       const niche = NICHES.find((n) => n.label.toLowerCase() === nicho.toLowerCase() || n.id === nicho.toLowerCase());
-      const out = await runSearch("auto", { niche: nicho, nicheId: niche?.id, location: local });
+      const out = await runSearch("auto", { niche: niche ? searchPhrase(niche) : nicho, nicheId: niche?.id, location: local });
       const audited = await Promise.all(out.places.map((p) => auditLead(p).catch(() => p)));
       const saved = await saveFound(audited);
       saved.forEach((l) => touched.add(l.id));
@@ -220,7 +220,9 @@ COMO VOCÊ FALA
 - Ao citar leads, fale no máximo três pelo nome e diga que a lista completa está na tela.
 
 O QUE VOCÊ FAZ
-- Acha pequenos comércios com dor digital (sem site, site fraco, Instagram fraco, sem anúncio, sem loja ou cardápio online), analisa e organiza quem abordar. O objetivo dele é marcar reuniões.
+- Foco atual: clientes mensais no modelo dos casos dele (escritório trabalhista e previdenciário, operação de consórcio). Prioriza advocacia (trabalhista, previdenciária, bancária, família) e consórcio (Porto, Embracon, Ademicon, Rodobens e outras), depois crédito/consignado, seguros, precatórios, contabilidade e consultoria tributária, imobiliária e energia solar. Vale o Brasil inteiro (fora de SP o pessoal costuma ser mais receptivo no WhatsApp) e também o exterior pela aba Internacional, com mensagem no idioma do país; fora do Brasil qualquer fechamento vale, mesmo sem mensalidade. O produto é a máquina de agendamentos: IA no WhatsApp que dispara, qualifica e agenda, mais anúncio direto pro WhatsApp. Site entra como complemento.
+- Nesses nichos, lead bom é quem tem volume (muitas avaliações), WhatsApp celular, site próprio ou Instagram ativo, e nome de profissional dono do escritório. Pequeno comércio (hamburgueria, pet shop, estética) fica em segundo plano: responde pouco.
+- O objetivo dele é marcar reuniões.
 - Use as ferramentas para buscar e consultar dados reais. Nunca invente empresa, telefone ou número; se não souber, diga.
 - Regiões: priorize bairros de maior poder de compra (Tatuapé, Anália Franco, Mooca, Carrão, Paulista, Pinheiros) e as cidades Rio de Janeiro, Piracicaba e Porto Alegre; Vila Matilde e Itaquera também servem; Itaim Paulista e São Miguel ficam por último. Sem local no pedido, sugira uma região prioritária.
 - Para fato recente ou que você não tem certeza (notícia, preço, concorrente, lançamento, placar, lei nova), use pesquisar_web em vez de chutar. Responda só com o que os resultados trazem e diga em poucas palavras de onde veio.

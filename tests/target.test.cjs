@@ -1,0 +1,17 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const ts = require('typescript');
+const fs = require('node:fs');
+require.extensions['.ts'] = (module, filename) => module._compile(ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText,filename);
+const {rescore,isTargetLead}=require('../lib/score.ts');
+const {normalizeIntlPhone}=require('../lib/phone.ts');
+const {langByPhone,countryByPhone}=require('../lib/countries.ts');
+const {intlMessage}=require('../lib/messages.ts');
+const {caseLine,guessNiche}=require('../lib/niches.ts');
+const lawyer={name:'Dra. Ana Souza Advocacia',category:'Advogado trabalhista',niche:'advocacia-trabalhista',phoneKind:'celular',reviews:64,rating:4.8,websiteKind:'proprio',instagram:{handle:'x'},audit:{ok:true,whatsappButton:false,metaPixel:false,googleTag:false},city:'Recife'};
+test('lead ideal de advocacia fica em 90+ e quente',()=>{const r=rescore(lawyer);assert.ok(r.score>=90,String(r.score));assert.equal(r.temperature,'quente');});
+test('advocacia fraca fica fria',()=>{const r=rescore({name:'Escritório X',category:'Escritório de advocacia',phoneKind:'fixo',reviews:2,websiteKind:'nenhum'});assert.ok(r.score<55,String(r.score));assert.equal(r.temperature,'frio');});
+test('comércio perfeito chega a 100',()=>{const r=rescore({name:'Burger',category:'Hamburgueria',niche:'hamburgueria',phoneKind:'celular',reviews:300,rating:4.7,hours:['seg'],websiteKind:'nenhum',instagramChecked:true});assert.ok(r.score>=95,String(r.score));});
+test('nichos-alvo reconhecidos em vários idiomas',()=>{for(const c of ['Rechtsanwalt','Abogado laboral','法律事務所','Insurance agency','Consórcio Embracon','Corretora de seguros','Precatórios','Energia solar'])assert.ok(isTargetLead({name:'X',category:c}),c);assert.ok(!isTargetLead({name:'X',category:'Pet shop'}));});
+test('telefone internacional e idioma',()=>{assert.equal(normalizeIntlPhone('(305) 555-1234','us').e164,'13055551234');assert.equal(normalizeIntlPhone('090-1234-5678','jp').e164,'819012345678');assert.equal(normalizeIntlPhone('090-1234-5678','jp').kind,'celular');assert.equal(langByPhone('819012345678'),'ja');assert.equal(langByPhone('351912345678'),'ptpt');assert.equal(langByPhone('5511999998888'),'pt');assert.equal(langByPhone('34612345678'),'es');assert.equal(countryByPhone('97150123456').id,'ae');});
+test('mensagens mantêm começo e final',()=>{const c=caseLine('Silva Advogados','Advogado trabalhista');assert.match(c,/quantos desses clientes/);assert.match(intlMessage('en','Acme Law'),/^Hi there! I know you're incredibly busy[\s\S]*Acme Law[\s\S]*Thanks, Victor – NOVA\.AI SOLUTIONS$/);assert.match(intlMessage('ja','ABC'),/ABC/);});

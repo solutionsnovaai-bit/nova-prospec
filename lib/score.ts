@@ -1,5 +1,5 @@
 import { productIdeas } from "./opportunities";
-import { guessNiche } from "./niches";
+import { GROUP_PROJECT, guessNiche, TARGET_GROUPS } from "./niches";
 import { regionTier } from "./regions";
 import type { Lead, PainKey } from "./types";
 
@@ -7,6 +7,7 @@ export const PAIN_LABEL: Record<PainKey, string> = {
   sem_site: "Sem site",
   site_fraco: "Site fraco",
   sem_trafego: "Rastreamento não identificado",
+  sem_whatsapp: "Site sem botão de WhatsApp",
   sem_instagram: "Sem Instagram",
   instagram_fraco: "Instagram fraco",
   google_fraco: "Google fraco",
@@ -22,19 +23,42 @@ export const PAIN_ORDER: PainKey[] = [
   "sem_instagram",
   "instagram_fraco",
   "sem_trafego",
+  "sem_whatsapp",
   "google_fraco",
 ];
 
 const W: Record<PainKey, number> = {
-  sem_site: 30,
+  sem_site: 25,
   site_fraco: 18,
-  sem_cardapio: 8,
-  sem_loja: 8,
-  sem_instagram: 10,
-  instagram_fraco: 8,
-  sem_trafego: 8,
-  google_fraco: 6,
+  sem_cardapio: 6,
+  sem_loja: 6,
+  sem_instagram: 4,
+  instagram_fraco: 4,
+  sem_trafego: 4,
+  sem_whatsapp: 4,
+  google_fraco: 0,
 };
+
+/** Pesos para advocacia e consórcio: a dor é atendimento/captação, não falta de site. */
+const W_TARGET: Record<PainKey, number> = {
+  sem_whatsapp: 12,
+  sem_site: 12,
+  sem_trafego: 8,
+  site_fraco: 8,
+  sem_instagram: 4,
+  instagram_fraco: 4,
+  google_fraco: 0,
+  sem_loja: 0,
+  sem_cardapio: 0,
+};
+
+/** Nome com cara de profissional dono do próprio escritório: a mensagem tende a cair direto em quem decide. */
+const OWNER_HINT = /(\bdra?\b\.?|\bdoutora?\b|\badvogad[oa]s?\b|\badv\.|\bconsultora?\b|\bcorretora?\b|associados|sociedade de advogados)/i;
+
+export function isTargetLead(l: Pick<Lead, "category" | "name" | "niche">) {
+  const n = guessNiche(`${l.category ?? ""} ${l.name}`, l.niche);
+  return !!n && TARGET_GROUPS.includes(n.group);
+}
 
 type Scorable = Pick<
   Lead,
@@ -74,6 +98,7 @@ export function computePains(l: Scorable): PainKey[] {
 
   // Ausência de tag é indício sobre rastreamento, nunca prova de ausência de anúncios.
   if (l.audit?.ok && !l.audit.metaPixel && !l.audit.googleAds && !l.audit.googleTag) p.add("sem_trafego");
+  if (l.audit?.ok && l.audit.whatsappButton === false && !l.audit.socials?.whatsapp) p.add("sem_whatsapp");
 
   if (l.instagram) {
     const f = l.instagram.followers;
@@ -91,27 +116,49 @@ export function computePains(l: Scorable): PainKey[] {
   return PAIN_ORDER.filter((k) => p.has(k));
 }
 
-/** Score 0–100 = dor (até ~75) + viabilidade (até 25: dá pra chamar no WhatsApp e o negócio é ativo). */
-export function computeScore(l: Scorable, pains = computePains(l)) {
+const temperatureOf = (score: number): Lead["temperature"] => (score >= 80 ? "quente" : score >= 55 ? "morno" : "frio");
+
+/** Contato (até 35): celular é o que faz a Bia conseguir falar com o lead. */
+const contactPts = (l: Scorable) => (l.phoneKind === "celular" ? 35 : l.phoneKind === "fixo" ? 8 : 0);
+
+/**
+ * Régua do calor (0–100). O lead perfeito chega a 95–100; quente a partir de 80, morno de 55 a 79.
+ * Nichos-alvo (advocacia, consórcio, crédito, seguros, contabilidade, imobiliária, energia solar):
+ * contato 35 + porte 25 + reputação 5 + investe em presença 10 + decisor 5 + dor de atendimento 20.
+ * Exemplo de 96: WhatsApp celular, 50+ avaliações nota 4,6, site e Instagram, "Dra." no nome,
+ * site sem botão de WhatsApp e sem pixel.
+ */
+function targetScore(l: Scorable, pains: PainKey[]) {
+  const r = l.reviews ?? 0;
+  const porte = r >= 100 ? 25 : r >= 50 ? 21 : r >= 20 ? 16 : r >= 8 ? 10 : r >= 3 ? 5 : 0;
+  const rep = (l.rating ?? 0) >= 4.5 ? 5 : (l.rating ?? 0) >= 4 ? 3 : 0;
+  const presenca = (l.websiteKind === "proprio" ? 6 : 0) + (l.instagram ? 4 : 0);
+  const decisor = OWNER_HINT.test(l.name) ? 5 : 0;
+  const dor = Math.min(20, pains.reduce((s, k) => s + W_TARGET[k], 0));
+  return contactPts(l) + porte + rep + presenca + decisor + dor;
+}
+
+/**
+ * Demais nichos: contato 35 + movimento 20 + reputação 5 + negócio ativo 5 + dor digital 35.
+ * Exemplo de 100: celular, 100+ avaliações nota 4,5+, horário preenchido, sem site e sem cardápio.
+ */
+function generalScore(l: Scorable, pains: PainKey[]) {
+  const r = l.reviews ?? 0;
+  const mov = r >= 100 ? 20 : r >= 30 ? 16 : r >= 10 ? 11 : r >= 3 ? 5 : 0;
+  const rep = (l.rating ?? 0) >= 4.5 ? 5 : (l.rating ?? 0) >= 4 ? 3 : 0;
+  const ativo = l.hours?.length ? 5 : 0;
   let dor = pains.reduce((s, k) => s + W[k], 0);
   if (pains.includes("sem_site") && pains.includes("site_fraco")) dor -= W.site_fraco;
-  dor = Math.min(dor, 75);
+  return contactPts(l) + mov + rep + ativo + Math.min(35, dor);
+}
 
-  let via = 0;
-  if (l.phoneKind === "celular") via += 11;
-  else if (l.phoneKind === "fixo") via += 4;
-  const r = l.reviews ?? 0;
-  if (r >= 10 && r <= 600) via += 8;
-  else if (r >= 3) via += 4;
-  if ((l.rating ?? 0) >= 4) via += 4;
-  if (l.hours?.length) via += 2;
+export function computeScore(l: Scorable, pains = computePains(l)) {
+  let score = isTargetLead(l) ? targetScore(l, pains) : generalScore(l, pains);
+  // região só desempata: Brasil inteiro e exterior contam igual
   const tier = regionTier(`${l.district ?? ""} ${l.address ?? ""} ${l.city ?? ""}`) ?? regionTier(l.query);
-  if (tier === "prioridade") via += 8;
-  if (tier === "regional") via -= 8;
-
-  const score = Math.max(0, Math.min(100, Math.round(dor + via)));
-  const temperature: Lead["temperature"] = score >= 65 ? "quente" : score >= 45 ? "morno" : "frio";
-  return { score, temperature };
+  if (tier === "regional") score -= 3;
+  score = Math.max(0, Math.min(100, Math.round(score)));
+  return { score, temperature: temperatureOf(score) };
 }
 
 export function rescore<T extends Scorable>(l: T): T & Pick<Lead, "pains" | "score" | "temperature"> {
@@ -123,6 +170,7 @@ export function rescore<T extends Scorable>(l: T): T & Pick<Lead, "pains" | "sco
 export function suggestProject(l: Scorable & { pains?: PainKey[] }) {
   const pains = l.pains ?? computePains(l);
   const niche = guessNiche(`${l.category ?? ""} ${l.name}`, l.niche);
+  if (niche && TARGET_GROUPS.includes(niche.group)) return GROUP_PROJECT[niche.group];
   if (pains.includes("site_fraco")) return { tipo: "Site novo", titulo: "Revisão do site com foco nos problemas observados" };
   if (pains.includes("sem_site") && !["comida", "varejo"].includes(niche?.group ?? "")) return { tipo: "Landing page", titulo: "Página de apresentação com serviços e contato" };
   return productIdeas(l)[0];
