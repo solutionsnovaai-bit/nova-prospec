@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     const b = await body<{ niche?: string; nicheId?: string; location?: string; source?: SearchSource; page?: number; country?: string }>(req);
     const cat = nicheById(b.nicheId);
     // nicho do catálogo pesquisa pelo termo certo (ex.: "advogado trabalhista"), não pelo rótulo
-    const niche = String((cat ? searchPhrase(cat) : b.niche) || "").trim();
+    const niche = String((cat && !(b.country && b.country !== "br") ? searchPhrase(cat) : b.niche) || "").trim();
     const location = String(b.location ?? "").trim();
     if (!niche || !location) return fail(Object.assign(new Error("Informe o nicho e o local."), { status: 400 }));
     const country = b.country && b.country !== "br" ? String(b.country).toLowerCase().slice(0, 2) : undefined;

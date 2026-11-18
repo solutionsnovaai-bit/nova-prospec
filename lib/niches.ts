@@ -1,6 +1,6 @@
 /** Catálogo de nichos: rótulo, grupo (decide o projeto ideal) e tags do OpenStreetMap. */
 
-export type NicheGroup = "juridico" | "consorcio" | "financeiro" | "consultoria" | "imobiliario" | "energia" | "comida" | "varejo" | "servico" | "saude" | "auto";
+export type NicheGroup = "juridico" | "consorcio" | "financeiro" | "consultoria" | "imobiliario" | "energia" | "saude_premium" | "educacao" | "veiculos" | "diaspora" | "comida" | "varejo" | "servico" | "saude" | "auto";
 
 export interface Niche {
   id: string;
@@ -16,7 +16,7 @@ export interface Niche {
  * e que pagam mensalidade por agendamento no WhatsApp (modelo Diferencial / Construtax).
  * Ficam no topo da lista para o reconhecimento automático pegar o nicho certo primeiro.
  */
-export const TARGET_GROUPS: NicheGroup[] = ["juridico", "consorcio", "financeiro", "consultoria", "imobiliario", "energia"];
+export const TARGET_GROUPS: NicheGroup[] = ["juridico", "consorcio", "financeiro", "consultoria", "imobiliario", "energia", "saude_premium", "educacao", "veiculos", "diaspora"];
 
 export const NICHES: Niche[] = [
   { id: "advocacia-trabalhista", label: "Advocacia trabalhista", group: "juridico", words: ["trabalhist", "employment law", "labor law", "laboral"], osm: ["office=lawyer"], q: "advogado trabalhista" },
@@ -35,6 +35,12 @@ export const NICHES: Niche[] = [
   { id: "tributario", label: "Consultoria tributária", group: "consultoria", words: ["tributári", "tributari", "recuperação tribut", "fiscal", "tax "], osm: ["office=tax_advisor"], q: "consultoria tributária" },
   { id: "contabilidade", label: "Contabilidade", group: "consultoria", words: ["contab", "contador", "accountant", "accounting", "cpa", "contable", "comptab", "steuerberat", "commercialist", "税理士", "세무"], osm: ["office=accountant"], q: "escritório de contabilidade" },
   { id: "imobiliaria", label: "Imobiliária e corretor", group: "imobiliario", words: ["imobili", "imóve", "corretor de imóveis", "real estate", "realtor", "inmobiliari", "immobili", "不動産", "부동산"], osm: ["office=estate_agent"], q: "imobiliária" },
+  { id: "brasileiros-exterior", label: "Negócio brasileiro no exterior", group: "diaspora", words: ["brazilian"], osm: [], q: "brazilian" },
+  { id: "odontologia", label: "Odontologia (implante e ortodontia)", group: "saude_premium", words: ["implante", "ortodon", "odonto", "dentist", "dental", "dentária", "dentaria", "clínica dent"], osm: ["amenity=dentist", "healthcare=dentist"], q: "clínica odontológica implante" },
+  { id: "estetica-premium", label: "Estética avançada (harmonização e capilar)", group: "saude_premium", words: ["harmoniza", "capilar", "cirurgia plást", "cirurgia plast", "dermatolog", "med spa", "medspa"], osm: ["amenity=clinic"], q: "clínica de harmonização facial" },
+  { id: "escola", label: "Escolas e cursos", group: "educacao", words: ["escola de inglês", "escola de idiomas", "idiomas", "curso técnico", "cursos profission", "profissionalizante", "escola técnica", "language school"], osm: ["amenity=language_school", "amenity=school"], q: "escola de inglês" },
+  { id: "autoescola", label: "Autoescola", group: "educacao", words: ["autoescola", "auto escola", "auto-escola", "cfc ", "driving school"], osm: ["amenity=driving_school"], q: "autoescola" },
+  { id: "seminovos", label: "Revenda de seminovos", group: "veiculos", words: ["seminov", "multimarcas", "revenda de carro", "revenda de veícul", "concessionária", "concessionaria", "car dealer"], osm: ["shop=car"], q: "loja de carros seminovos" },
   { id: "energia-solar", label: "Energia solar", group: "energia", words: ["energia solar", "fotovolt", "solar install", "solar energy", "solar panel", "placas solares", "paneles solares", "panneaux solaires", "photovoltaik", "fotovoltaic", "太陽光", "태양광"], osm: ['shop][name~"solar",i'], q: "energia solar" },
   { id: "hamburgueria", label: "Hamburgueria", group: "comida", words: ["hamburg", "burger", "lanche"], osm: ['amenity=fast_food][cuisine~"burger"', 'amenity=restaurant][cuisine~"burger"'] },
   { id: "pizzaria", label: "Pizzaria", group: "comida", words: ["pizza"], osm: ['amenity=restaurant][cuisine~"pizza"', 'amenity=fast_food][cuisine~"pizza"'] },
@@ -91,6 +97,8 @@ export function caseLine(name: string, text: string, hint?: string) {
     return "montei uma IA que entrega consulta agendada todo dia pelo WhatsApp pra escritórios trabalhistas e previdenciários. Quantos desses clientes podiam estar na agenda de vocês?";
   if (g === "consorcio")
     return "montei uma IA que entrega lead de consórcio pronto todo dia pelo WhatsApp, direto pro consultor. Quantas dessas vendas podiam estar saindo daí?";
+  if (g === "diaspora")
+    return "montei uma IA que entrega cliente agendado todo dia pelo WhatsApp pra empresas brasileiras aí fora, sem ninguém encostar no celular. Quantos clientes brasileiros podiam estar na agenda de vocês?";
   if (g && TARGET_GROUPS.includes(g))
     return "montei uma IA que entrega cliente agendado todo dia pelo WhatsApp, sem ninguém encostar no celular. Quantos desses clientes podiam estar na agenda de vocês?";
   return `vi ${name} no Google e montei uma IA que responde, qualifica e agenda clientes pelo WhatsApp, 24h. Quantos clientes ficam sem resposta aí hoje?`;
@@ -116,6 +124,10 @@ export const GROUP_PROJECT: Record<NicheGroup, { tipo: string; titulo: string }>
   consultoria: { tipo: "Assistente IA", titulo: "IA no WhatsApp que agenda diagnóstico com o consultor" },
   imobiliario: { tipo: "Assistente IA", titulo: "IA no WhatsApp que qualifica e agenda visita" },
   energia: { tipo: "Assistente IA", titulo: "IA no WhatsApp que qualifica conta de luz e agenda visita técnica" },
+  saude_premium: { tipo: "Assistente IA", titulo: "IA no WhatsApp que responde, qualifica e agenda avaliação" },
+  educacao: { tipo: "Assistente IA", titulo: "IA no WhatsApp que responde interessados e agenda matrícula" },
+  veiculos: { tipo: "Assistente IA", titulo: "IA no WhatsApp que qualifica o comprador e agenda test drive" },
+  diaspora: { tipo: "Assistente IA", titulo: "IA no WhatsApp que atende e agenda clientes brasileiros" },
   comida: { tipo: "Cardápio digital", titulo: "Cardápio digital com pedido no WhatsApp" },
   varejo: { tipo: "Loja virtual", titulo: "Catálogo online com vitrine e pedido no WhatsApp" },
   servico: { tipo: "Landing page", titulo: "Página com serviços, fotos e agendamento no WhatsApp" },
@@ -131,6 +143,10 @@ const HOURS: Record<NicheGroup, { label: string; windows: [number, number][] }> 
   consultoria: { label: "9h às 11h ou 14h às 17h", windows: [[9, 11], [14, 17]] },
   imobiliario: { label: "9h às 12h ou 14h às 18h", windows: [[9, 12], [14, 18]] },
   energia: { label: "8h às 11h ou 14h às 17h", windows: [[8, 11], [14, 17]] },
+  saude_premium: { label: "11h às 13h ou 17h às 19h", windows: [[11, 13], [17, 19]] },
+  educacao: { label: "10h às 12h ou 14h às 17h", windows: [[10, 12], [14, 17]] },
+  veiculos: { label: "9h às 11h ou 14h às 17h", windows: [[9, 11], [14, 17]] },
+  diaspora: { label: "horário comercial local", windows: [[9, 18]] },
   comida: { label: "14h às 17h, entre o almoço e o jantar", windows: [[14, 17]] },
   varejo: { label: "10h às 12h ou 15h às 17h", windows: [[10, 12], [15, 17]] },
   servico: { label: "9h às 11h ou 14h às 16h", windows: [[9, 11], [14, 16]] },

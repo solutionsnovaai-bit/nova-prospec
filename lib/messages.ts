@@ -36,6 +36,26 @@ Victor – NOVA.AI SOLUTIONS`,
 Ne parliamo in 30 minuti? Anche una risposta breve mi renderebbe felice.
 
 Victor – NOVA.AI SOLUTIONS`,
+  nl: `Hallo! Ik weet dat jullie het ontzettend druk hebben, dus ik hou het kort: ik heb een AI gebouwd die elke dag via WhatsApp gekwalificeerde klanten inplant voor bedrijven zoals dat van jullie. Hoeveel van die klanten zouden in jullie agenda kunnen staan?
+
+Zin in een kort gesprek van 30 min? Zelfs een kort antwoord zou mijn dag goedmaken.
+
+Victor – NOVA.AI SOLUTIONS`,
+  tr: `Merhaba! Çok yoğun olduğunuzu biliyorum, o yüzden kısa keseceğim: sizin gibi işletmeler için her gün WhatsApp üzerinden nitelikli müşteri randevusu ayarlayan bir yapay zekâ geliştirdim. Bu müşterilerden kaçı sizin takviminizde olabilirdi?
+
+30 dakikalık kısa bir görüşmeye ne dersiniz? Kısa bir yanıt bile günümü güzelleştirir.
+
+Victor – NOVA.AI SOLUTIONS`,
+  ar: `مرحبًا! أعلم أنكم مشغولون جدًا، لذا سأدخل في الموضوع مباشرة: طوّرت ذكاءً اصطناعيًا يحجز كل يوم مواعيد مع عملاء مؤهلين عبر واتساب لشركات مثل شركتكم. كم من هؤلاء العملاء يمكن أن يكونوا في جدول مواعيدكم؟
+
+هل لديكم 30 دقيقة لمكالمة سريعة؟ حتى رد قصير سيسعدني كثيرًا.
+
+Victor – NOVA.AI SOLUTIONS`,
+  id: `Halo! Saya tahu Anda sangat sibuk, jadi langsung saja: saya membuat AI yang setiap hari menjadwalkan klien berkualitas lewat WhatsApp untuk bisnis seperti milik Anda. Berapa banyak klien itu yang bisa masuk ke jadwal Anda?
+
+Bisa ngobrol 30 menit? Balasan singkat pun sudah bikin hari saya lebih senang.
+
+Victor – NOVA.AI SOLUTIONS`,
   ja: `こんにちは！お忙しいと思うので手短に。御社のような会社向けに、WhatsAppで毎日見込み客の予約を自動で入れるAIを作りました。そのお客様が御社のカレンダーに入るとしたら、何人になるでしょうか？
 
 30分ほどお話しできませんか？短いお返事だけでも嬉しいです。

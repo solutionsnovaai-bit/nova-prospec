@@ -2,7 +2,7 @@
 import useSWR, { mutate } from "swr";
 import { langByPhone } from "./countries";
 import { intlMessage } from "./messages";
-import { caseLine, greeting } from "./niches";
+import { caseLine, greeting, guessNiche } from "./niches";
 import type { Lead, ProviderUsage, PublicSettings } from "./types";
 
 export class ApiError extends Error {
@@ -75,7 +75,8 @@ export function patchLeadCache(lead: Lead) {
 }
 
 export function fillMessage(tpl: string, l: Lead, signature?: string) {
-  const lang = langByPhone(l.phoneE164);
+  // negócio brasileiro lá fora recebe a mensagem em português do Brasil
+  const lang = guessNiche(`${l.category ?? ""} ${l.name}`, l.niche)?.group === "diaspora" ? "pt" : langByPhone(l.phoneE164);
   const intl = intlMessage(lang, l.name);
   if (intl) return intl; // fora do Brasil: mensagem pronta no idioma do país
   const projeto = l.ai?.projeto.tipo ? l.ai.projeto.tipo.toLowerCase() : "um site";

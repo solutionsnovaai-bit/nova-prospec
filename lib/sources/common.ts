@@ -79,7 +79,10 @@ export function toFound(r: RawPlace, input: SearchInput): FoundPlace {
   const ph = intl ? normalizeIntlPhone(r.phone, input.country!) : normalizePhone(r.phone);
   const web = classifyWebsite(r.website);
   const igHandle = r.instagram || web.instagram;
-  const niche = guessNiche(`${r.category ?? ""} ${(r.categories ?? []).join(" ")} ${r.name}`, input.nicheId);
+  const text = `${r.category ?? ""} ${(r.categories ?? []).join(" ")} ${r.name}`;
+  // busca de "negócio brasileiro lá fora" traz gente local junto: só vira brasileiro (mensagem em PT) se nome/site/categoria mostrar
+  const br = input.nicheId === "brasileiros-exterior" && /bra[sz]il|brasileir|brésil|brasilian/i.test(`${text} ${r.website ?? ""}`);
+  const niche = input.nicheId === "brasileiros-exterior" && !br ? guessNiche(text) : guessNiche(text, input.nicheId);
   const split = intl ? { district: undefined, city: input.location.split(",")[0].trim() } : splitAddress(r.address);
   const { district, city } = split;
   const base = {

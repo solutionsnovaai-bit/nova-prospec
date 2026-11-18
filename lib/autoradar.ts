@@ -1,8 +1,8 @@
 import "server-only";
-import { COUNTRIES, INTL_NICHES, type Lang } from "./countries";
+import { COUNTRIES, INTL_NICHES, countryById, type Country, type Lang, type Region } from "./countries";
 import { db } from "./db";
 import { auditLead, checkSite, listLeads, saveFound } from "./leads";
-import { NICHES, searchPhrase, TARGET_GROUPS } from "./niches";
+import { nicheById, searchPhrase } from "./niches";
 import { REGIONS } from "./regions";
 import { runSearch } from "./sources";
 import type { FoundPlace } from "./types";
@@ -23,22 +23,45 @@ export interface AutoRadarState {
   runs: { at: string; scope: string; searches: { q: string; found: number; saved: number; error?: string }[] }[];
 }
 
-const DEFAULT: AutoRadarState = { cursorBr: 0, cursorIntl: 0, min: 80, perDayBr: 6, perDayIntl: 4, enabled: true, maxQueue: 100, runs: [] };
+const DEFAULT: AutoRadarState = { cursorBr: 0, cursorIntl: 0, min: 80, perDayBr: 6, perDayIntl: 8, enabled: true, maxQueue: 100, runs: [] };
 
 /** Quentes com WhatsApp que ainda não foram chamados. */
 export async function queueSize() {
   return (await listLeads()).filter((l) => ["novo", "qualificado", "demo"].includes(l.status) && !l.optOut && l.temperature === "quente" && l.phoneKind === "celular").length;
 }
 
-const BR_NICHES = NICHES.filter((n) => TARGET_GROUPS.includes(n.group));
-const BR_CITIES = [...REGIONS.brasil, ...REGIONS.cidades.filter((c) => !REGIONS.brasil.includes(c)), ...REGIONS.prioridade];
-// no exterior, os nichos de mensalidade e o "negócio brasileiro lá fora"
-const INTL_IDS = ["law-employment", "law-immigration", "law-injury", "law", "insurance", "mortgage", "realestate", "accounting", "solar", "brazilian"];
-const INTL = INTL_NICHES.filter((n) => INTL_IDS.includes(n.id));
-// países com WhatsApp forte primeiro (Japão e Coreia ficam por último: lá dominam LINE e KakaoTalk)
-const INTL_PLACES = COUNTRIES.filter((c) => !["jp", "kr"].includes(c.id))
-  .flatMap((c) => c.cities.slice(0, 3).map((city) => ({ c, city })))
-  .concat(COUNTRIES.filter((c) => ["jp", "kr"].includes(c.id)).flatMap((c) => c.cities.slice(0, 2).map((city) => ({ c, city }))));
+// Brasil: advocacia continua a prioridade (1 a cada 2 buscas); no meio, os nichos de mensalidade mais receptivos
+const BR_LAW = ["advocacia-trabalhista", "advocacia-previdenciaria", "advocacia-bancaria", "advocacia-familia", "advocacia"];
+const BR_OTHER = ["odontologia", "estetica-premium", "energia-solar", "imobiliaria", "escola", "seminovos", "seguros", "credito", "contabilidade", "autoescola", "consorcio", "tributario"];
+const BR_CITIES = [...new Set([...REGIONS.brasil, ...REGIONS.cidades, ...REGIONS.prioridade])];
+
+// Mundo: público local no idioma de cada país + negócio brasileiro lá fora (1 a cada 4 buscas)
+const LOCAL = ["law-employment", "dental", "realestate", "law-immigration", "accounting", "medspa", "law", "solar", "insurance", "mortgage"];
+const BR_ABROAD = ["br-dentist", "br-accountant", "br-realestate", "br-lawyer"];
+const SKIP = ["jp", "kr", "ao", "mz"]; // Japão e Coreia usam LINE e KakaoTalk; ficam só na busca manual
+// Europa e Américas aparecem mais; Ásia, Oriente Médio, Oceania e África entram no meio
+const PATTERN: Region[] = ["europa", "americas", "asia", "europa", "americas", "oriente", "europa", "americas", "oceania", "africa"];
+type Place = { c: Country; city: string };
+function roundRobin<T>(lists: T[][]) {
+  const out: T[] = [];
+  for (let k = 0; lists.some((l) => k < l.length); k++) lists.forEach((l) => k < l.length && out.push(l[k]));
+  return out;
+}
+const US_CITIES = ["New York, NY", "Los Angeles, CA", "Houston, TX", "Chicago, IL", "Dallas, TX", "Atlanta, GA"]; // Miami e Orlando já entram na rota dos brasileiros
+const byRegion = new Map<Region, Place[]>(
+  PATTERN.map((r) => [r, roundRobin(COUNTRIES.filter((c) => c.region === r && !SKIP.includes(c.id)).map((c) => (c.id === "us" ? US_CITIES : c.cities.slice(0, 2)).map((city) => ({ c, city }))))]),
+);
+const INTL_PLACES: Place[] = (() => {
+  const q = new Map([...byRegion].map(([r, l]) => [r, [...l]]));
+  const out: Place[] = [];
+  while ([...q.values()].some((l) => l.length)) for (const r of PATTERN) { const x = q.get(r)!.shift(); if (x) out.push(x); }
+  return out;
+})();
+const DIASPORA: [string, string][] = [
+  ["us", "Boston, MA"], ["pt", "Lisboa"], ["gb", "London"], ["us", "Newark, NJ"], ["ie", "Dublin"], ["us", "Orlando, FL"],
+  ["pt", "Porto"], ["ca", "Toronto"], ["es", "Barcelona"], ["us", "Miami, FL"], ["it", "Milano"], ["au", "Sydney"],
+  ["ch", "Zürich"], ["us", "New York, NY"], ["de", "Berlin"], ["fr", "Paris"], ["nl", "Amsterdam"], ["us", "Atlanta, GA"],
+];
 
 export async function getAutoRadar(): Promise<AutoRadarState> {
   return { ...DEFAULT, ...((await db.get<AutoRadarState>("config", "autoradar")) ?? {}) };
@@ -51,17 +74,26 @@ export async function saveAutoRadar(patch: Partial<AutoRadarState>) {
   return next;
 }
 
+const shift = (k: number, len: number) => (k + Math.floor(k / len)) % len; // anda 1 por vez e desloca a cada volta
+
 function brPlan(i: number) {
-  // nicho e cidade andam juntos: cada rodada passa por regiões diferentes do Brasil
-  const n = BR_NICHES[i % BR_NICHES.length];
+  const id = i % 2 === 0 ? BR_LAW[(i / 2) % BR_LAW.length] : BR_OTHER[((i - 1) / 2) % BR_OTHER.length];
+  const n = nicheById(id)!;
   const city = BR_CITIES[(i * 5 + Math.floor(i / BR_CITIES.length)) % BR_CITIES.length];
   return { niche: searchPhrase(n), nicheId: n.id, location: city, country: undefined as string | undefined, label: `${n.label} · ${city}` };
 }
 
 function intlPlan(i: number) {
-  // passos diferentes para nicho e cidade: cada rodada cai em países variados
-  const n = INTL[i % INTL.length];
-  const p = INTL_PLACES[(i * 7 + Math.floor(i / INTL_PLACES.length)) % INTL_PLACES.length];
+  if (i % 4 === 3) {
+    const d = Math.floor(i / 4);
+    const n = INTL_NICHES.find((x) => x.id === BR_ABROAD[d % BR_ABROAD.length])!;
+    const [cid, city] = DIASPORA[shift(d, DIASPORA.length)];
+    const c = countryById(cid)!;
+    return { niche: n.q[c.lang] ?? n.q.en, nicheId: "brasileiros-exterior" as string | undefined, location: city, country: c.id, label: `${c.flag} ${n.label} · ${city}` };
+  }
+  const k = i - Math.floor((i + 1) / 4);
+  const n = INTL_NICHES.find((x) => x.id === LOCAL[k % LOCAL.length])!;
+  const p = INTL_PLACES[shift(k, INTL_PLACES.length)];
   const lang: Lang = p.c.lang;
   return { niche: n.q[lang] ?? n.q.en, nicheId: undefined as string | undefined, location: p.city, country: p.c.id, label: `${p.c.flag} ${n.label} · ${p.city}` };
 }

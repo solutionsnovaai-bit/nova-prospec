@@ -8,11 +8,11 @@ import { AutoRadarCard } from "./AutoRadarCard";
 import { ProductPreview } from "./product-preview";
 import { NICHES } from "@/lib/niches";
 import { REGIONS } from "@/lib/regions";
-import { COUNTRIES, INTL_NICHES, REGION_LABEL, intlQuery, type Region } from "@/lib/countries";
+import { COUNTRIES, INTL_NICHES, REGION_LABEL, intlNicheId, intlQuery, type Region } from "@/lib/countries";
 import type { FoundPlace, SourceId } from "@/lib/types";
 
 type Src = "auto" | "serpapi" | "serper" | "searchapi" | "osm";
-const QUICK = ["advocacia-trabalhista", "advocacia-previdenciaria", "advocacia", "consorcio-porto", "consorcio-embracon", "consorcio-ademicon", "consorcio-rodobens", "consorcio"];
+const QUICK = ["advocacia-trabalhista", "advocacia-previdenciaria", "advocacia-bancaria", "advocacia", "odontologia", "estetica-premium", "energia-solar", "imobiliaria", "escola", "autoescola", "seminovos", "seguros", "credito", "contabilidade", "consorcio"];
 
 export function RadarView({ intl = false }: { intl?: boolean }) {
   const { settings } = useSettings();
@@ -78,7 +78,7 @@ export function RadarView({ intl = false }: { intl?: boolean }) {
       for (const l of locs) {
         const r = await api<{ places: FoundPlace[]; used: SourceId; note?: string; hasMore: boolean }>("/api/search", {
           method: "POST",
-          json: { niche: q.niche, nicheId: q.nicheId, location: l, source, page, country: intl ? country : undefined },
+          json: { niche: q.niche, nicheId: intl ? intlNicheId(intlNiche) : q.nicheId, location: l, source, page, country: intl ? country : undefined },
         });
         const seen = new Set(all.map((p) => p.id));
         all = [...all, ...r.places.filter((p) => !seen.has(p.id))].sort((a, b) => b.score - a.score);
@@ -224,7 +224,7 @@ export function RadarView({ intl = false }: { intl?: boolean }) {
                 ))}
               </div>
               <div className="muted" style={{ fontSize: 12 }}>
-                Busca como <b>{niche.trim() || intlQuery(intlNiche, cty.lang)}</b> em {loc} · mensagem da Bia em {({ en: "inglês", es: "espanhol", ptpt: "português de Portugal", fr: "francês", de: "alemão", it: "italiano", ja: "japonês", ko: "coreano", pt: "português" } as const)[cty.lang]} · moeda local {cty.currency}
+                Busca como <b>{niche.trim() || intlQuery(intlNiche, cty.lang)}</b> em {loc} · mensagem da Bia em {({ en: "inglês", es: "espanhol", ptpt: "português de Portugal", fr: "francês", de: "alemão", it: "italiano", nl: "holandês", tr: "turco", ar: "árabe", id: "indonésio", ja: "japonês", ko: "coreano", pt: "português" } as const)[cty.lang]} · moeda local {cty.currency}
                 {(cty.id === "jp" || cty.id === "kr") && " · lá o WhatsApp é pouco usado (LINE/KakaoTalk dominam), espere menos respostas"}
               </div>
             </div>

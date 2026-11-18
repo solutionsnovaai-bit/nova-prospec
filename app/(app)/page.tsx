@@ -11,6 +11,8 @@ import { Count, Pains, Score, Spinner, toast, WebLabel, WhatsAppButton } from "@
 import { api, fmt, patchLeadCache, useLeads, useSettings } from "@/lib/client";
 import { regionTier } from "@/lib/regions";
 import { isTargetLead } from "@/lib/score";
+import { countryByPhone } from "@/lib/countries";
+import { guessNiche, type NicheGroup } from "@/lib/niches";
 import { STATUS_LABEL, type Lead, type LeadStatus } from "@/lib/types";
 
 const tierRank = (l: Lead) => {
@@ -19,6 +21,25 @@ const tierRank = (l: Lead) => {
 };
 
 const OPEN: LeadStatus[] = ["novo", "qualificado", "demo"];
+const ANSWERED: LeadStatus[] = ["respondeu", "negociando", "reuniao", "fechado"];
+const GROUP_NAME: Partial<Record<NicheGroup, string>> = {
+  juridico: "Advocacia", consorcio: "Consórcio", financeiro: "Crédito e seguros", consultoria: "Contábil e tributário",
+  imobiliario: "Imobiliária", energia: "Energia solar", saude_premium: "Odonto e estética", educacao: "Escolas e autoescola",
+  veiculos: "Seminovos", diaspora: "Brasileiros lá fora",
+};
+
+/** Placar: de quem a Bia já chamou, quantos responderam, por nicho e por país. */
+function score(list: Lead[], key: (l: Lead) => string) {
+  const m = new Map<string, { sent: number; ans: number }>();
+  for (const l of list) {
+    const k = key(l);
+    const v = m.get(k) ?? { sent: 0, ans: 0 };
+    v.sent++;
+    if (ANSWERED.includes(l.status)) v.ans++;
+    m.set(k, v);
+  }
+  return [...m].map(([k, v]) => ({ k, ...v, rate: v.sent ? Math.round((v.ans / v.sent) * 100) : 0 })).sort((a, b) => b.sent - a.sent).slice(0, 6);
+}
 const FUNNEL: LeadStatus[] = ["novo", "qualificado", "demo", "abordado", "respondeu", "negociando", "reuniao", "fechado"];
 
 export default function Overview() {
@@ -45,7 +66,10 @@ export default function Overview() {
     const funnel = FUNNEL.map((s) => ({ s, n: all.filter((l) => l.status === s).length }));
     const noSite = hot.filter((l) => l.pains.includes("sem_site")).length;
     const withDemo = open.filter((l) => l.demoUrl).length;
-    return { all, open, hot, queue, contactedWeek, contacted, replied, meetings, closed, funnel, noSite, withDemo };
+    const sent = all.filter((l) => l.contactedAt || ["abordado", ...ANSWERED, "perdido"].includes(l.status));
+    const byGroup = score(sent, (l) => GROUP_NAME[guessNiche(`${l.category ?? ""} ${l.name}`, l.niche)?.group as NicheGroup] ?? "Comércio e outros");
+    const byCountry = score(sent, (l) => { const c = countryByPhone(l.phoneE164); return c ? `${c.flag} ${c.name}` : "🇧🇷 Brasil"; });
+    return { all, open, hot, queue, contactedWeek, contacted, replied, meetings, closed, funnel, noSite, withDemo, byGroup, byCountry, sent: sent.length };
   }, [leads]);
 
   const loadSample = async () => {
@@ -210,6 +234,32 @@ export default function Overview() {
               </div>
             </section>
           </div>
+
+          <section className="panel">
+            <div className="panel-h">
+              <h2>Placar da Bia</h2>
+              <span className="meta">quem responde mais, por nicho e por país</span>
+            </div>
+            <div className="panel-b placar">
+              {data.sent === 0 ? (
+                <p className="dim">Aparece aqui assim que a Bia começar a chamar.</p>
+              ) : (
+                [{ t: "Nicho", rows: data.byGroup }, { t: "País", rows: data.byCountry }].map(({ t, rows }) => (
+                  <div key={t} className="placar-col">
+                    <h3 className="dim">{t}</h3>
+                    {rows.map((r) => (
+                      <div key={r.k} className="placar-row">
+                        <span>{r.k}</span>
+                        <span className="placar-bar"><i style={{ width: `${Math.max(r.rate, 2)}%` }} /></span>
+                        <span className="num">{r.rate}%</span>
+                        <span className="dim num">{r.ans}/{r.sent}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
 
           <section className="panel">
             <div className="panel-h">

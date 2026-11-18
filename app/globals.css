@@ -956,3 +956,14 @@ button, a, input, select { touch-action: manipulation; }
 .forge-canvas { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); place-self: auto; }
 .splash-flare { position: absolute; left: 50%; top: 50%; width: min(150vw, 1400px); margin-left: calc(min(150vw, 1400px) / -2); margin-top: -1px; place-self: auto; }
 .splash { overflow: hidden; }
+
+/* Placar da Bia */
+.placar { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; }
+.placar-col h3 { font-size: 12px; font-weight: 500; margin: 0 0 10px; }
+.placar-row { display: grid; grid-template-columns: minmax(0, 1.4fr) 1fr 40px 44px; gap: 10px; align-items: center; padding: 6px 0; font-size: 13px; }
+.placar-row > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.placar-bar { height: 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.07); overflow: hidden; }
+.placar-bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, #3b82f6, #22c55e); transform-origin: left; animation: placar-in 0.6s cubic-bezier(0.23, 1, 0.32, 1) both; }
+.placar-row .num { text-align: right; }
+@keyframes placar-in { from { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { .placar-bar i { animation: none; } }
