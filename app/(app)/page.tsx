@@ -85,7 +85,7 @@ export default function Overview() {
         <Brand size="lg" />
       </div>
       <div className="cosmos">
-      <Globe />
+      <Globe points={(leads ?? []).filter((l) => typeof l.lat === "number" && typeof l.lng === "number").map((l) => ({ lat: l.lat!, lng: l.lng! }))} />
       <div className="titlerow">
         <div>
           <h1>{b.greet}</h1>

@@ -9,8 +9,10 @@ type V3 = [number, number, number];
  * meridianos, rotas em arco entre pontos e órbitas, nas cores da marca.
  * Acompanha o ponteiro de leve. Canvas 2D puro, sem bibliotecas.
  */
-export function Globe() {
+export function Globe({ points = [] }: { points?: { lat: number; lng: number }[] }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
+  // cidades onde há leads, agrupadas de 2 em 2 graus: viram os faróis do globo
+  const key = [...new Set(points.map((p) => `${Math.round(p.lat / 2) * 2},${Math.round(p.lng / 2) * 2}`))].slice(0, 14).join(";");
 
   useEffect(() => {
     const cv = ref.current;
@@ -30,8 +32,15 @@ export function Globe() {
       pts.push({ v: [Math.cos(a) * r, y, Math.sin(a) * r], g: n > 0.55 ? 1 : 0, s: 0.6 + ((i * 7919) % 97) / 97 });
     }
     const land = pts.filter((p) => p.g);
-    const beacons: V3[] = Array.from({ length: 8 }, (_, i) => land[(i * 37 + 11) % land.length].v);
-    const routes: [V3, V3][] = beacons.map((b, i) => [b, beacons[(i + 3) % beacons.length]]);
+    const geo = (lat: number, lng: number): V3 => {
+      const la = (lat * Math.PI) / 180, lo = (lng * Math.PI) / 180;
+      return [Math.cos(la) * Math.cos(lo), Math.sin(la), Math.cos(la) * Math.sin(lo)];
+    };
+    const real = key ? key.split(";").map((k) => { const [a, b] = k.split(",").map(Number); return geo(a, b); }) : [];
+    // com leads: rotas saem de São Paulo até cada cidade; sem leads: pontos decorativos como antes
+    const home = geo(-23.55, -46.63);
+    const beacons: V3[] = real.length ? [home, ...real] : Array.from({ length: 8 }, (_, i) => land[(i * 37 + 11) % land.length].v);
+    const routes: [V3, V3][] = real.length ? real.filter((r) => Math.hypot(r[0] - home[0], r[1] - home[1], r[2] - home[2]) > 0.05).map((r) => [home, r]) : beacons.map((b, i) => [b, beacons[(i + 3) % beacons.length]]);
     const stars = Array.from({ length: 70 }, (_, i) => ({ x: ((i * 9301 + 49297) % 233280) / 233280, y: ((i * 4273 + 1013) % 71993) / 71993, p: i * 1.37 }));
 
     let w = 0, h = 0, dpr = 1, raf = 0, visible = true;
@@ -178,7 +187,7 @@ export function Globe() {
     document.addEventListener("visibilitychange", kick);
     raf = requestAnimationFrame(draw);
     return () => { cancelAnimationFrame(raf); ro.disconnect(); io.disconnect(); document.removeEventListener("visibilitychange", kick); window.removeEventListener("pointermove", onMove); };
-  }, []);
+  }, [key]);
 
   return <canvas ref={ref} className="globe" aria-hidden />;
 }
