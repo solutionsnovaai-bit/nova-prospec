@@ -1,5 +1,5 @@
 import "server-only";
-import { COUNTRIES, INTL_NICHES, countryById, type Country, type Lang, type Region } from "./countries";
+import { COUNTRIES, INTL_NICHES, countryById, type Country, type Region } from "./countries";
 import { db } from "./db";
 import { auditLead, checkSite, listLeads, saveFound } from "./leads";
 import { nicheById, searchPhrase } from "./niches";
@@ -35,10 +35,19 @@ const BR_LAW = ["advocacia-trabalhista", "advocacia-previdenciaria", "advocacia-
 const BR_OTHER = ["odontologia", "estetica-premium", "energia-solar", "imobiliaria", "escola", "seminovos", "seguros", "credito", "contabilidade", "autoescola", "consorcio", "tributario"];
 const BR_CITIES = [...new Set([...REGIONS.brasil, ...REGIONS.cidades, ...REGIONS.prioridade])];
 
-// Mundo: a oferta é site, então entram serviços de casa (limpeza 2x por volta), saúde, imóveis e contador;
-// advocacia aparece 1 vez por volta. Negócio brasileiro lá fora entra 1 a cada 4 buscas (limpeza na frente).
-const LOCAL = ["cleaning", "dental", "handyman", "realestate", "plumber", "medspa", "painting", "remodeling", "cleaning", "moving", "accounting", "landscaping", "roofing", "pest", "law", "insurance"];
-const BR_ABROAD = ["br-cleaning", "br-dentist", "br-cleaning", "br-accountant", "br-realestate", "br-lawyer"];
+// Mundo: a oferta é site. Metade das buscas é limpeza (cidades onde mais tem empresa de limpeza);
+// o resto gira entre construção, Airbnb, imóveis e serviços de casa. Advocacia não entra lá fora.
+// 1 a cada 4 buscas é negócio brasileiro lá fora (limpeza na frente).
+const CLEAN = ["cleaning", "cleaning-domestic", "cleaning-office", "cleaning-airbnb", "carpet-cleaning"];
+const OTHER = ["airbnb-management", "construction", "remodeling", "property-management", "handyman", "plumber", "painting", "roofing", "dental", "moving", "medspa", "realestate", "landscaping", "pest", "accounting", "solar", "insurance"];
+const BR_ABROAD = ["br-cleaning", "br-realestate", "br-cleaning", "br-dentist", "br-cleaning", "br-accountant"];
+const CLEAN_PLACES: [string, string][] = [
+  ["gb", "London"], ["us", "New York, NY"], ["ie", "Dublin"], ["au", "Sydney"], ["gb", "Manchester"], ["ca", "Toronto"],
+  ["pt", "Lisboa"], ["us", "Boston, MA"], ["gb", "Birmingham"], ["au", "Melbourne"], ["es", "Madrid"], ["us", "Miami, FL"],
+  ["nl", "Amsterdam"], ["ae", "Dubai"], ["gb", "Leeds"], ["ca", "Vancouver"], ["nz", "Auckland"], ["es", "Barcelona"],
+  ["us", "Houston, TX"], ["pt", "Porto"], ["au", "Brisbane"], ["ie", "Cork"], ["fr", "Paris"], ["us", "Los Angeles, CA"],
+  ["nl", "Rotterdam"], ["us", "Orlando, FL"], ["de", "Berlin"], ["it", "Milano"], ["mx", "Ciudad de México"],
+];
 const SKIP = ["jp", "kr", "ao", "mz"]; // Japão e Coreia usam LINE e KakaoTalk; ficam só na busca manual
 // Europa e Américas aparecem mais; Ásia, Oriente Médio, Oceania e África entram no meio
 const PATTERN: Region[] = ["europa", "americas", "asia", "europa", "americas", "oriente", "europa", "americas", "oceania", "africa"];
@@ -85,18 +94,24 @@ function brPlan(i: number) {
 }
 
 function intlPlan(i: number) {
-  if (i % 4 === 3) {
-    const d = Math.floor(i / 4);
-    const n = INTL_NICHES.find((x) => x.id === BR_ABROAD[d % BR_ABROAD.length])!;
-    const [cid, city] = DIASPORA[shift(d, DIASPORA.length)];
+  const round = Math.floor(i / 4);
+  const slot = i % 4; // 0 e 2: limpeza · 1: outros · 3: brasileiro lá fora
+  const pick = (id: string, cid: string, city: string, nicheId?: string) => {
+    const n = INTL_NICHES.find((x) => x.id === id)!;
     const c = countryById(cid)!;
-    return { niche: n.q[c.lang] ?? n.q.en, nicheId: "brasileiros-exterior" as string | undefined, location: city, country: c.id, label: `${c.flag} ${n.label} · ${city}` };
+    return { niche: n.q[c.lang] ?? n.q.en, nicheId, location: city, country: c.id, label: `${c.flag} ${n.label} · ${city}` };
+  };
+  if (slot === 3) {
+    const [cid, city] = DIASPORA[shift(round, DIASPORA.length)];
+    return pick(BR_ABROAD[round % BR_ABROAD.length], cid, city, "brasileiros-exterior");
   }
-  const k = i - Math.floor((i + 1) / 4);
-  const n = INTL_NICHES.find((x) => x.id === LOCAL[k % LOCAL.length])!;
-  const p = INTL_PLACES[shift(k, INTL_PLACES.length)];
-  const lang: Lang = p.c.lang;
-  return { niche: n.q[lang] ?? n.q.en, nicheId: undefined as string | undefined, location: p.city, country: p.c.id, label: `${p.c.flag} ${n.label} · ${p.city}` };
+  if (slot === 1) {
+    const p = INTL_PLACES[shift(round, INTL_PLACES.length)];
+    return pick(OTHER[round % OTHER.length], p.c.id, p.city);
+  }
+  const c = round * 2 + (slot === 2 ? 1 : 0);
+  const [cid, city] = CLEAN_PLACES[shift(c, CLEAN_PLACES.length)];
+  return pick(CLEAN[c % CLEAN.length], cid, city);
 }
 
 async function enrich(list: FoundPlace[]) {
@@ -126,7 +141,7 @@ export async function runAutoRadar(opts: { scope?: "br" | "intl" | "all"; br?: n
       const out = await runSearch("auto", { niche: p.niche, nicheId: p.nicheId, location: p.location, country: p.country });
       const fresh = out.places.filter((x) => !known.has(x.id) && x.phoneE164);
       const rich = await enrich(fresh.slice(0, 20));
-      const hot = rich.filter((x) => x.score >= st.min && x.phoneKind === "celular");
+      const hot = rich.filter((x) => x.score >= (p.country ? Math.min(st.min, 75) : st.min) && x.phoneKind === "celular");
       if (hot.length) await saveFound(hot);
       hot.forEach((h) => known.add(h.id));
       log.push({ q: p.label, found: out.places.length, saved: hot.length });

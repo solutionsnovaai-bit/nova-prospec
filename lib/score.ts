@@ -56,8 +56,13 @@ const W_TARGET: Record<PainKey, number> = {
 /** Nome com cara de profissional dono do próprio escritório: a mensagem tende a cair direto em quem decide. */
 const OWNER_HINT = /(\bdra?\b\.?|\bdoutora?\b|\badvogad[oa]s?\b|\badv\.|\bconsultora?\b|\bcorretora?\b|associados|sociedade de advogados)/i;
 
-export function isTargetLead(l: Pick<Lead, "category" | "name" | "niche">) {
+/** Limpeza em qualquer idioma (lá fora é o carro-chefe da oferta de site). */
+export const CLEANING_RX = /clean|limpez|limpie|nettoy|reinig|schoonmaak|pulizi|temizlik|تنظيف|kebersihan|清掃|청소/i;
+
+export function isTargetLead(l: Pick<Lead, "category" | "name" | "niche"> & { country?: string }) {
   const n = guessNiche(`${l.category ?? ""} ${l.name}`, l.niche);
+  // lá fora a oferta é site: advocacia sai do foco, o resto entra
+  if (l.country && l.country !== "br") return n?.group !== "juridico";
   return !!n && TARGET_GROUPS.includes(n.group);
 }
 
@@ -164,7 +169,10 @@ function siteScore(l: Scorable & { country?: string }, pains: PainKey[]) {
   const rep = (l.rating ?? 0) >= 4.5 ? 5 : (l.rating ?? 0) >= 4 ? 3 : 0;
   const decisor = OWNER_HINT.test(l.name) ? 5 : 0;
   const dor = pains.includes("sem_site") ? 30 : pains.includes("site_fraco") ? 22 : pains.includes("sem_whatsapp") ? 15 : 0;
-  return contactPts(l) + porte + rep + decisor + dor;
+  // lá fora: limpeza na frente, advocacia no fim da fila
+  const text = `${l.category ?? ""} ${l.name}`;
+  const ajuste = CLEANING_RX.test(text) || l.niche === "limpeza" ? 6 : guessNiche(text, l.niche)?.group === "juridico" ? -18 : 0;
+  return contactPts(l) + porte + rep + decisor + dor + ajuste;
 }
 
 export function computeScore(l: Scorable & { country?: string }, pains = computePains(l)) {

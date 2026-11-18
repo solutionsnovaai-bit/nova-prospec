@@ -145,7 +145,7 @@ export function siteVariant(l: Pick<Lead, "website" | "websiteKind" | "audit">):
 }
 
 /** Empresa de limpeza (qualquer idioma): sem site, a mensagem cita o case de uma limpeza no Reino Unido, sem nome nem link. */
-export const CLEANING_RX = /clean|limpez|limpie|nettoy|reinig|schoonmaak|pulizi|temizlik|تنظيف|kebersihan|清掃|청소/i;
+export { CLEANING_RX } from "./score";
 
 export function intlMessage(lang: Lang, nome: string, variant: SiteVariant = "ai", cleaning = false) {
   if (lang === "pt") return undefined;
