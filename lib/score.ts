@@ -120,7 +120,8 @@ export function computePains(l: Scorable): PainKey[] {
 const temperatureOf = (score: number): Lead["temperature"] => (score >= 80 ? "quente" : score >= 55 ? "morno" : "frio");
 
 /** Contato (até 35): celular é o que faz a Bia conseguir falar com o lead. */
-const contactPts = (l: Scorable) => (l.phoneKind === "celular" ? 35 : l.phoneKind === "fixo" ? 8 : 0);
+const contactPts = (l: Scorable & { country?: string }) =>
+  l.phoneKind === "celular" ? (["us", "ca"].includes(l.country ?? "") ? 22 : 35) : l.phoneKind === "fixo" ? 8 : 0; // EUA/Canadá: o número pode não ter WhatsApp
 
 /**
  * Régua do calor (0–100). O lead perfeito chega a 95–100; quente a partir de 80, morno de 55 a 79.

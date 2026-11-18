@@ -19,10 +19,16 @@ export interface AutoRadarState {
   perDayBr: number;
   perDayIntl: number;
   enabled: boolean;
+  maxQueue: number; // pula a semana se já tiver esse tanto de quentes esperando
   runs: { at: string; scope: string; searches: { q: string; found: number; saved: number; error?: string }[] }[];
 }
 
-const DEFAULT: AutoRadarState = { cursorBr: 0, cursorIntl: 0, min: 80, perDayBr: 4, perDayIntl: 3, enabled: true, runs: [] };
+const DEFAULT: AutoRadarState = { cursorBr: 0, cursorIntl: 0, min: 80, perDayBr: 6, perDayIntl: 4, enabled: true, maxQueue: 100, runs: [] };
+
+/** Quentes com WhatsApp que ainda não foram chamados. */
+export async function queueSize() {
+  return (await listLeads()).filter((l) => ["novo", "qualificado", "demo"].includes(l.status) && !l.optOut && l.temperature === "quente" && l.phoneKind === "celular").length;
+}
 
 const BR_NICHES = NICHES.filter((n) => TARGET_GROUPS.includes(n.group));
 const BR_CITIES = [...REGIONS.brasil, ...REGIONS.cidades.filter((c) => !REGIONS.brasil.includes(c)), ...REGIONS.prioridade];
@@ -52,8 +58,9 @@ function brPlan(i: number) {
 }
 
 function intlPlan(i: number) {
+  // passos diferentes para nicho e cidade: cada rodada cai em países variados
   const n = INTL[i % INTL.length];
-  const p = INTL_PLACES[Math.floor(i / INTL.length) % INTL_PLACES.length];
+  const p = INTL_PLACES[(i * 7 + Math.floor(i / INTL_PLACES.length)) % INTL_PLACES.length];
   const lang: Lang = p.c.lang;
   return { niche: n.q[lang] ?? n.q.en, nicheId: undefined as string | undefined, location: p.city, country: p.c.id, label: `${p.c.flag} ${n.label} · ${p.city}` };
 }

@@ -5,14 +5,15 @@ import { api, relTime } from "@/lib/client";
 import { Spinner, toast } from "./ui";
 
 type Run = { at: string; scope: string; searches: { q: string; found: number; saved: number; error?: string }[] };
-type State = { enabled: boolean; min: number; perDayBr: number; perDayIntl: number; runs: Run[] };
+type State = { enabled: boolean; min: number; perDayBr: number; perDayIntl: number; maxQueue: number; runs: Run[] };
 
 /** Cartão do radar automático: liga/desliga, mostra a última rodada e roda na hora. */
 export function AutoRadarCard({ onSaved }: { onSaved?: () => void }) {
   const [st, setSt] = useState<State | null>(null);
   const [busy, setBusy] = useState(false);
+  const [fila, setFila] = useState<number | null>(null);
   useEffect(() => {
-    api<{ state: State }>("/api/cron/radar", { method: "POST", json: {} }).then((r) => setSt(r.state)).catch(() => undefined);
+    api<{ state: State; fila: number }>("/api/cron/radar", { method: "POST", json: {} }).then((r) => { setSt(r.state); setFila(r.fila); }).catch(() => undefined);
   }, []);
   if (!st) return null;
   const last = st.runs[0];
@@ -41,8 +42,9 @@ export function AutoRadarCard({ onSaved }: { onSaved?: () => void }) {
             <Sparkles size={15} strokeWidth={1.6} /> Radar automático {st.enabled ? "ligado" : "desligado"}
           </div>
           <div className="sub">
-            Todo dia às 8h: {st.perDayBr} buscas no Brasil e {st.perDayIntl} no exterior, salva só quem passa de {st.min}.
-            {last ? ` Última rodada ${relTime(last.at)}: ${saved} quentes em ${last.searches.length} buscas.` : " Ainda não rodou."}
+            Toda segunda às 8h: {st.perDayBr} buscas no Brasil e {st.perDayIntl} no exterior, salva só quem passa de {st.min}. Pula a semana se já tiver mais de {st.maxQueue} quentes esperando
+            {fila !== null ? ` (hoje: ${fila})` : ""}.
+            {last ? ` Última rodada ${relTime(last.at)}: ${last.searches.length ? `${saved} quentes em ${last.searches.length} buscas` : last.scope}.` : ""}
           </div>
         </div>
         <button className="btn sm" disabled={busy} onClick={() => set({ enabled: !st.enabled })}>
