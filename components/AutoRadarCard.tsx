@@ -50,8 +50,11 @@ export function AutoRadarCard({ onSaved }: { onSaved?: () => void }) {
         <button className="btn sm" disabled={busy} onClick={() => set({ enabled: !st.enabled })}>
           {st.enabled ? "Desligar" : "Ligar"}
         </button>
-        <button className="btn sm gold" disabled={busy} onClick={() => window.confirm("Rodar agora gasta até 4 buscas grátis. Continuar?") && set({ run: "all" })}>
-          {busy ? <Spinner size={13} /> : null} Rodar agora
+        <button className="btn sm" disabled={busy} onClick={() => window.confirm("Buscar agora no Brasil gasta até 4 buscas grátis. Continuar?") && set({ run: "br" })}>
+          {busy ? <Spinner size={13} /> : null} Brasil agora
+        </button>
+        <button className="btn sm gold" disabled={busy} onClick={() => window.confirm("Buscar agora no Mundo gasta até 6 buscas grátis. Continuar?") && set({ run: "intl" })}>
+          {busy ? <Spinner size={13} /> : null} Mundo agora
         </button>
       </div>
       {last && (

@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     if (typeof b.perDayIntl === "number") patch.perDayIntl = Math.max(0, Math.min(8, b.perDayIntl));
     if (typeof b.maxQueue === "number") patch.maxQueue = Math.max(0, Math.min(1000, b.maxQueue));
     if (Object.keys(patch).length) await saveAutoRadar(patch);
-    if (b.run) return ok({ ...(await runAutoRadar({ scope: b.run, br: 2, intl: 2, deadlineMs: 50000 })), state: await getAutoRadar() });
+    if (b.run) return ok({ ...(await runAutoRadar({ scope: b.run, br: b.run === "br" ? 4 : 2, intl: b.run === "intl" ? 6 : 2, deadlineMs: 150000 })), state: await getAutoRadar() });
     return ok({ state: await getAutoRadar(), fila: await queueSize() });
   } catch (e) {
     return fail(e);
