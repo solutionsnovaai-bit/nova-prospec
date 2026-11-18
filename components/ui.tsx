@@ -1,6 +1,7 @@
 "use client";
 import { Loader2, MessageCircle } from "lucide-react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { fillMessage } from "@/lib/client";
 import { waLink, WEBSITE_LABEL } from "@/lib/phone";
 import { PAIN_LABEL } from "@/lib/score";
@@ -151,7 +152,10 @@ export function Count({ n }: { n: number }) {
 
 /** Carregando: o cérebro do logo pulsa dentro de um anel que gira. */
 export function BrainLoader({ label = "Carregando" }: { label?: string }) {
-  return (
+  // sai da página (que anima com transform) e fica fixo no centro da área de conteúdo, em qualquer tela
+  const [host, setHost] = useState<Element | null>(null);
+  useEffect(() => setHost(document.querySelector(".app") ?? document.body), []);
+  const ui = (
     <div className="brainload" role="status" aria-label={label}>
       <div className="b">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -160,5 +164,11 @@ export function BrainLoader({ label = "Carregando" }: { label?: string }) {
         <i className="bl-orbit" />
       </div>
     </div>
+  );
+  return (
+    <>
+      <div className="brainload-spacer" aria-hidden />
+      {host ? createPortal(ui, host) : null}
+    </>
   );
 }

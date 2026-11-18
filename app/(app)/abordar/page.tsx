@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Pains, Score, toast, WebLabel, WhatsAppButton } from "@/components/ui";
-import { api, fillMessage, patchLeadCache, relTime, useLeads, useSettings } from "@/lib/client";
+import { api, fillMessage, patchLeadCache, relTime, useLeads, useSettings, leadPlace } from "@/lib/client";
 import { countryByPhone } from "@/lib/countries";
 import { contactWindow } from "@/lib/niches";
 import { isTargetLead } from "@/lib/score";
@@ -60,7 +60,7 @@ export default function AbordarPage() {
       <Link href={`/leads/${encodeURIComponent(l.id)}`} style={{ minWidth: 0 }}>
         <div className="name ellipsis">{l.name}</div>
         <div className="sub ellipsis">
-          {[l.category, l.district].filter(Boolean).join(" · ")} · {fu ? `${sentCount(l) <= 1 ? "2ª mensagem" : "última tentativa"} · enviado ${relTime(new Date(lastSent(l)).toISOString())}` : <WebLabel l={l} />}
+          {leadPlace(l).flag} {[l.category, l.district ?? l.city].filter(Boolean).join(" · ")} · {fu ? `${sentCount(l) <= 1 ? "2ª mensagem" : "última tentativa"} · enviado ${relTime(new Date(lastSent(l)).toISOString())}` : <WebLabel l={l} />}
           {contactWindow(`${l.category ?? ""} ${l.name}`, l.niche).now ? <span className="pos"> · bom horário agora</span> : null}
         </div>
         <div className="sub ellipsis only-phone" style={{ marginTop: 4 }}>{fillMessage(fu ? follow(l) : tpl(l), l, settings?.signature).slice(0, 90)}…</div>

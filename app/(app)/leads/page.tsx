@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { MATRIX_FILTER, nicheLabel } from "@/components/PainMatrix";
 import { Pains, Score, Spinner, StatusPill, toast, WebLabel } from "@/components/ui";
-import { api, fmt, relTime, useLeads } from "@/lib/client";
+import { api, fmt, relTime, useLeads, leadPlace } from "@/lib/client";
 import { COUNTRIES, REGION_LABEL, countryByPhone, type Region } from "@/lib/countries";
 import { PAIN_LABEL, PAIN_ORDER } from "@/lib/score";
 import { STATUS_LABEL, STATUS_ORDER, type Lead, type LeadStatus, type PainKey } from "@/lib/types";
@@ -289,7 +289,7 @@ function LeadsInner() {
                 {col.slice(0, 60).map((l) => (
                   <div key={l.id} className="kcard" draggable onDragStart={() => setDragId(l.id)} onClick={() => router.push(`/leads/${encodeURIComponent(l.id)}`)}>
                     <div className="ellipsis" style={{ fontWeight: 500 }}>{l.name}</div>
-                    <div className="muted ellipsis" style={{ fontSize: 12 }}>{[nicheLabel(l), l.district].filter(Boolean).join(" · ")}</div>
+                    <div className="muted ellipsis" style={{ fontSize: 12 }}>{leadPlace(l).flag} {[nicheLabel(l), l.district ?? l.city].filter(Boolean).join(" · ")}</div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, gap: 8 }}>
                       <Score value={l.score} temp={l.temperature} />
                       <span className="muted" style={{ fontSize: 11 }}>{relTime(l.updatedAt)}</span>
@@ -333,7 +333,7 @@ function LeadRow({ l, checked, onCheck, onOpen }: { l: Lead; checked: boolean; o
       <div style={{ minWidth: 0 }}>
         <div className="name ellipsis">{l.name}</div>
         <div className="sub ellipsis">
-          {[nicheLabel(l), l.district].filter(Boolean).join(" · ")}
+          {leadPlace(l).flag} {[nicheLabel(l), l.district ?? l.city].filter(Boolean).join(" · ")}
           {l.rating ? <> · <span className="num">{l.rating.toFixed(1)}</span> ({fmt.format(l.reviews ?? 0)})</> : null}
           {l.source === "exemplo" ? <> · <span className="gold">exemplo</span></> : null}
         </div>

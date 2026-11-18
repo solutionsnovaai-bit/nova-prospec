@@ -1,6 +1,6 @@
 "use client";
 import useSWR, { mutate } from "swr";
-import { langByPhone } from "./countries";
+import { countryById, countryByPhone, langByPhone } from "./countries";
 import { CLEANING_RX, DIASPORA_SITE, intlMessage, siteVariant } from "./messages";
 import { caseLine, greeting, guessNiche } from "./niches";
 import type { Lead, ProviderUsage, PublicSettings } from "./types";
@@ -109,3 +109,18 @@ export function relTime(iso?: string) {
 }
 
 export const fmt = new Intl.NumberFormat("pt-BR");
+
+/** País do lead (pelo campo country ou pelo DDI); Brasil quando não tem. */
+export function leadPlace(l: Pick<Lead, "country" | "phoneE164">) {
+  const c = (l.country && l.country !== "br" ? countryById(l.country) : undefined) ?? countryByPhone(l.phoneE164);
+  return c ? { flag: c.flag, name: c.name, currency: c.currency } : { flag: "🇧🇷", name: "Brasil", currency: "BRL" };
+}
+
+/** Link direto pro perfil da empresa no Google Maps (abre o app no celular). */
+export function googleProfileUrl(l: Pick<Lead, "mapsUrl" | "name" | "city">) {
+  const u = l.mapsUrl;
+  if (!u) return undefined;
+  const pid = u.match(/place_id:([\w-]+)/)?.[1];
+  if (pid) return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([l.name, l.city].filter(Boolean).join(" "))}&query_place_id=${pid}`;
+  return u;
+}

@@ -188,13 +188,16 @@ export function Shell({ children }: { children: ReactNode }) {
               <LogoForge />
               <i className="splash-flare" />
             </div>
-            <div className="splash-name"><Brand size="lg" /></div>
-            <div className="splash-msgs">
-              <span>Ligando o radar</span>
-              <span>Carregando a base de leads</span>
-              <span>Acordando a Nova</span>
+            {/* nome e frases ficam embaixo do logo sem tirar o logo do centro da tela */}
+            <div className="splash-foot">
+              <div className="splash-name"><Brand size="lg" /></div>
+              <div className="splash-msgs">
+                <span>Ligando o radar</span>
+                <span>Carregando a base de leads</span>
+                <span>Acordando a Nova</span>
+              </div>
+              <div className="splash-bar"><i /></div>
             </div>
-            <div className="splash-bar"><i /></div>
           </div>
         </div>
       )}

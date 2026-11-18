@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BrainLoader, Pains, Score, Spinner, toast, WhatsAppButton } from "@/components/ui";
-import { api, fillMessage, fmt, patchLeadCache, relTime, useLead, useSettings } from "@/lib/client";
+import { api, fillMessage, fmt, googleProfileUrl, leadPlace, patchLeadCache, relTime, useLead, useSettings } from "@/lib/client";
 import { contactWindow } from "@/lib/niches";
 import { WEBSITE_LABEL } from "@/lib/phone";
 import { siteIsWeak, suggestProject } from "@/lib/score";
@@ -88,11 +88,12 @@ export default function LeadPage() {
           <div style={{ minWidth: 0, flex: "1 1 320px" }}>
             <h1 style={{ fontSize: 22, lineHeight: "28px", margin: 0, fontWeight: 600 }}>{l.name}</h1>
             <div className="dim" style={{ marginTop: 4 }}>
-              {[l.category, l.district, l.city].filter(Boolean).join(" · ")}
+              {leadPlace(l).flag} {[l.category, l.district, l.city].filter(Boolean).join(" · ")}
               {l.rating ? <> · <span className="num">{l.rating.toFixed(1)}</span> com <span className="num">{fmt.format(l.reviews ?? 0)}</span> avaliações</> : null}
             </div>
             <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 12, flexWrap: "wrap" }}>
               <Score value={l.score} temp={l.temperature} />
+              <span className="chip place-chip" title="País e moeda do trabalho">{leadPlace(l).flag} {leadPlace(l).name} · {leadPlace(l).currency}</span>
               <Pains pains={l.pains} max={6} />
             </div>
           </div>
@@ -102,8 +103,8 @@ export default function LeadPage() {
                 <option key={s} value={s}>{STATUS_LABEL[s]}</option>
               ))}
             </select>
-            {l.mapsUrl && (
-              <a className="btn" href={l.mapsUrl} target="_blank" rel="noreferrer"><MapPin size={14} strokeWidth={1.6} /> Maps</a>
+            {googleProfileUrl(l) && (
+              <a className="btn" href={googleProfileUrl(l)} target="_blank" rel="noreferrer"><MapPin size={14} strokeWidth={1.6} /> Perfil no Google</a>
             )}
             <button className="btn icon danger" onClick={remove} aria-label="Apagar lead"><Trash2 size={15} strokeWidth={1.6} /></button>
           </div>
