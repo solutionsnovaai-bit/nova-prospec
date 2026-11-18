@@ -35,8 +35,9 @@ const BR_LAW = ["advocacia-trabalhista", "advocacia-previdenciaria", "advocacia-
 const BR_OTHER = ["odontologia", "estetica-premium", "energia-solar", "imobiliaria", "escola", "seminovos", "seguros", "credito", "contabilidade", "autoescola", "consorcio", "tributario"];
 const BR_CITIES = [...new Set([...REGIONS.brasil, ...REGIONS.cidades, ...REGIONS.prioridade])];
 
-// Mundo: público local no idioma de cada país + negócio brasileiro lá fora (1 a cada 4 buscas)
-const LOCAL = ["law-employment", "dental", "realestate", "law-immigration", "accounting", "medspa", "law", "solar", "insurance", "mortgage"];
+// Mundo: a oferta é site, então entra quem mais paga por site (saúde, imóveis, contador e serviços de casa);
+// advocacia aparece 1 vez por volta. Negócio brasileiro lá fora entra 1 a cada 4 buscas.
+const LOCAL = ["dental", "cleaning", "realestate", "medspa", "roofing", "accounting", "remodeling", "law", "solar", "insurance"];
 const BR_ABROAD = ["br-dentist", "br-accountant", "br-realestate", "br-lawyer"];
 const SKIP = ["jp", "kr", "ao", "mz"]; // Japão e Coreia usam LINE e KakaoTalk; ficam só na busca manual
 // Europa e Américas aparecem mais; Ásia, Oriente Médio, Oceania e África entram no meio

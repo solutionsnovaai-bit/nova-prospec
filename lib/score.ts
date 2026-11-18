@@ -154,8 +154,22 @@ function generalScore(l: Scorable, pains: PainKey[]) {
   return contactPts(l) + mov + rep + ativo + Math.min(35, dor);
 }
 
-export function computeScore(l: Scorable, pains = computePains(l)) {
-  let score = isTargetLead(l) ? targetScore(l, pains) : generalScore(l, pains);
+/**
+ * Fora do Brasil a oferta é site: contato 35 (EUA/Canadá 22) + porte 25 + reputação 5 + decisor 5 + dor de site 30.
+ * Sem site 30, site fraco 22, site sem jeito de chamar no WhatsApp 15. Site bom fica morno (vai pro fim da fila).
+ */
+function siteScore(l: Scorable & { country?: string }, pains: PainKey[]) {
+  const r = l.reviews ?? 0;
+  const porte = r >= 100 ? 25 : r >= 50 ? 21 : r >= 20 ? 16 : r >= 8 ? 10 : r >= 3 ? 5 : 0;
+  const rep = (l.rating ?? 0) >= 4.5 ? 5 : (l.rating ?? 0) >= 4 ? 3 : 0;
+  const decisor = OWNER_HINT.test(l.name) ? 5 : 0;
+  const dor = pains.includes("sem_site") ? 30 : pains.includes("site_fraco") ? 22 : pains.includes("sem_whatsapp") ? 15 : 0;
+  return contactPts(l) + porte + rep + decisor + dor;
+}
+
+export function computeScore(l: Scorable & { country?: string }, pains = computePains(l)) {
+  const abroad = !!l.country && l.country !== "br";
+  let score = abroad ? siteScore(l, pains) : isTargetLead(l) ? targetScore(l, pains) : generalScore(l, pains);
   // região só desempata: Brasil inteiro e exterior contam igual
   const tier = regionTier(`${l.district ?? ""} ${l.address ?? ""} ${l.city ?? ""}`) ?? regionTier(l.query);
   if (tier === "regional") score -= 3;
